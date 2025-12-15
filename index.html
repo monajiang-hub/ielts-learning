@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600,1,400,1,600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="layout">
@@ -16,145 +16,112 @@
       <div class="logo">IELTS 7+ 🎓</div>
       <nav class="nav">
         <div class="nav-title">知识花园</div>
-        <button class="nav-item active" data-scroll="hero">首页</button>
-        <button class="nav-item" data-scroll="vocab">单词学习</button>
+        <button class="nav-item active" data-page="home">首页</button>
+        <button class="nav-item" data-page="vocab">单词学习</button>
+        <button class="nav-item" data-page="notebook">单词本</button>
 
         <div class="nav-title mt">Training Modules</div>
-        <button class="nav-item" data-scroll="listening">听力训练</button>
-        <button class="nav-item" data-scroll="speaking">口语训练</button>
-        <button class="nav-item" data-scroll="reading">阅读训练</button>
-        <button class="nav-item" data-scroll="writing">写作训练</button>
+        <button class="nav-item" data-page="listening">听力训练</button>
+        <button class="nav-item" data-page="speaking">口语训练</button>
+        <button class="nav-item" data-page="reading">阅读训练</button>
+        <button class="nav-item" data-page="writing">写作训练</button>
 
         <div class="nav-title mt">Explore</div>
-        <button class="nav-item" data-scroll="mock">真题演练</button>
-        <button class="nav-item" data-scroll="idiom">地道英语</button>
+        <button class="nav-item" data-page="mock">真题演练</button>
+        <button class="nav-item" data-page="idiom">地道英语</button>
       </nav>
     </aside>
 
-    <!-- 右侧主内容 -->
+    <!-- 右侧主内容：每个 .page 是一个“界面”，点击左侧切换 -->
     <main class="main">
-      <!-- 顶部鸡汤 + 状态条 -->
-      <header class="header">
-        <div class="tagline">
-          <div class="quote-en">“The journey of a thousand miles begins with a single step.”</div>
-          <div class="quote-cn">千里之行，始于足下</div>
-        </div>
-        <div class="top-right">
-          <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
-          <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
-          <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
-          <button class="avatar" id="btnAuth">U</button>
-        </div>
-      </header>
+      <!-- 首页：只展示概要，不含详细训练内容 -->
+      <section id="page-home" class="page active">
+        <!-- 顶部鸡汤 + 状态条 -->
+        <header class="header">
+          <div class="tagline">
+            <div class="quote-en">“The journey of a thousand miles begins with a single step.”</div>
+            <div class="quote-cn">千里之行，始于足下</div>
+          </div>
+          <div class="top-right">
+            <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
+            <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
+            <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
+            <button class="avatar" id="btnAuth">U</button>
+          </div>
+        </header>
 
-      <!-- 主页：早安卡 + 单词学习小卡 -->
-      <section class="hero" id="hero">
-        <div class="hero-left">
-          <p class="hello">早安，准 <span id="avgDisplay">7.0</span> 分选手！ ✨</p>
-          <p class="status">今日花园状态：<span class="status-label">需除草</span> (ง •̀_•́)ง</p>
-          <div class="hero-actions">
-            <button class="btn primary" id="ctaEnter">进入我的花园</button>
-            <label class="btn ghost date-btn">
-              设置考试日期
-              <input type="date" id="examDateInput" />
-            </label>
+        <!-- 早安卡片 + 单词学习小卡 -->
+        <section class="hero">
+          <div class="hero-left">
+            <p class="hello">早安，准 <span id="avgDisplay">7.0</span> 分选手！ ✨</p>
+            <p class="status">今日花园状态：<span class="status-label">需除草</span> (ง •̀_•́)ง</p>
+            <div class="hero-actions">
+              <button class="btn primary" data-go="listening">进入我的花园</button>
+              <label class="btn ghost date-btn">
+                设置考试日期
+                <input type="date" id="examDateInput" />
+              </label>
+            </div>
+            <div class="hero-icons">
+              <span>🏡</span><span>🌽</span><span>🌲</span><span>😊</span>
+            </div>
           </div>
-          <div class="hero-icons">
-            <span>🏡</span><span>🌽</span><span>🌲</span><span>😊</span>
+          <div class="word-card">
+            <div class="word-title">单词学习</div>
+            <div class="word-num">
+              <span id="wordToday">0</span>
+              /
+              <input id="wordTarget" type="number" value="30" min="1" max="200" />
+            </div>
+            <button class="btn secondary" data-go="vocab">开始背诵</button>
           </div>
-        </div>
-        <div class="word-card">
-          <div class="word-title">单词学习</div>
-          <div class="word-num">
-            <span id="wordToday">0</span>
-            /
-            <input id="wordTarget" type="number" value="30" min="1" max="200" />
-          </div>
-          <button class="btn secondary" id="ctaVocab">开始背诵</button>
-        </div>
-      </section>
+        </section>
 
-      <!-- 专项突破 Target Gaps -->
-      <section class="targets" id="targets">
-        <h3>专项突破 (Target Gaps)</h3>
-        <div class="target-grid">
-          <div class="target-card">
-            <div class="target-label">READING</div>
-            <div class="target-top">
-              <span class="pill blue">阅读</span>
-              <span class="icon">📘</span>
+        <!-- 专项突破：四张卡，固定 2×2 布局 -->
+        <section class="targets">
+          <h3>专项突破 (Target Gaps)</h3>
+          <div class="target-grid">
+            <div class="target-card">
+              <div class="target-label">READING</div>
+              <div class="target-top">
+                <span class="pill blue">阅读</span>
+                <span class="icon">📘</span>
+              </div>
+              <div class="score-row"><span id="readingScore">7.5</span><span class="label">Target Score</span></div>
+              <div class="hint">i+1 推荐：学术类长难句分析</div>
             </div>
-            <div class="score-row"><span id="readingScore">7.5</span><span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：学术类长难句分析</div>
-          </div>
-          <div class="target-card">
-            <div class="target-label">LISTENING</div>
-            <div class="target-top">
-              <span class="pill purple">听力</span>
-              <span class="icon">🎧</span>
+            <div class="target-card">
+              <div class="target-label">LISTENING</div>
+              <div class="target-top">
+                <span class="pill purple">听力</span>
+                <span class="icon">🎧</span>
+              </div>
+              <div class="score-row"><span id="listeningScore">7</span><span class="label">Target Score</span></div>
+              <div class="hint">i+1 推荐：1.2x 倍速听写</div>
             </div>
-            <div class="score-row"><span id="listeningScore">7</span><span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：1.2x 倍速听写</div>
-          </div>
-          <div class="target-card">
-            <div class="target-label">SPEAKING</div>
-            <div class="target-top">
-              <span class="pill red">口语</span>
-              <span class="icon">🎤</span>
+            <div class="target-card">
+              <div class="target-label">SPEAKING</div>
+              <div class="target-top">
+                <span class="pill red">口语</span>
+                <span class="icon">🎤</span>
+              </div>
+              <div class="score-row"><span id="speakingScore">6.5</span><span class="label">Target Score</span></div>
+              <div class="hint">i+1 推荐：Part 2 流利度跟读</div>
             </div>
-            <div class="score-row"><span id="speakingScore">6.5</span><span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：Part 2 流利度跟读</div>
-          </div>
-          <div class="target-card">
-            <div class="target-label">WRITING</div>
-            <div class="target-top">
-              <span class="pill orange">写作</span>
-              <span class="icon">✏️</span>
+            <div class="target-card">
+              <div class="target-label">WRITING</div>
+              <div class="target-top">
+                <span class="pill orange">写作</span>
+                <span class="icon">✏️</span>
+              </div>
+              <div class="score-row"><span id="writingScore">6.5</span><span class="label">Target Score</span></div>
+              <div class="hint">i+1 推荐：复杂句式汉译英</div>
             </div>
-            <div class="score-row"><span id="writingScore">6.5</span><span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：复杂句式汉译英</div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Training Modules 2×2 快捷入口 + 考试倒计时 -->
-      <section class="grid-two" id="modules">
-        <div class="card-panel quad">
-          <div class="card-title-row">
-            <div class="card-title">专项突破 (Training Modules) 💫</div>
-          </div>
-          <div class="quad-grid">
-            <button class="quad-item" data-scroll="listening">
-              <span class="quad-icon">🎧</span>
-              <span class="quad-text">听力训练</span>
-            </button>
-            <button class="quad-item" data-scroll="speaking">
-              <span class="quad-icon">🗣️</span>
-              <span class="quad-text">口语训练</span>
-            </button>
-            <button class="quad-item" data-scroll="reading">
-              <span class="quad-icon">📖</span>
-              <span class="quad-text">阅读训练</span>
-            </button>
-            <button class="quad-item" data-scroll="writing">
-              <span class="quad-icon">✏️</span>
-              <span class="quad-text">写作训练</span>
-            </button>
-          </div>
-        </div>
-        <div class="card-panel countdown">
-          <div class="card-title">考试倒计时</div>
-          <div class="count-value" id="countValue">未设置</div>
-          <label class="btn ghost date-btn small">
-            重新设置
-            <input type="date" id="examDateInput2" />
-          </label>
-        </div>
-      </section>
-
-      <!-- 听说读写学习时长柱状图（只统计4科） -->
-      <section class="grid-two" id="stats">
-        <div class="card-panel">
+        <!-- 听说读写学习时长柱状图 -->
+        <section class="card-panel stats">
           <div class="card-title-row">
             <div class="card-title">听说读写学习时长</div>
             <div class="range-tabs">
@@ -167,140 +134,100 @@
             </div>
           </div>
           <canvas id="timeChart" height="220"></canvas>
-        </div>
-        <div class="card-panel tip-box">
-          <div class="card-title">学习小贴士 😊</div>
-          <p>每天坚持一点点，听说读写都沾一沾，分数就会悄悄往上长～</p>
+          <p class="hint stats-tip">每天坚持 30 分钟听力 + 30 分钟阅读，配合适量口语和写作练习，分数会慢慢涨起来～</p>
+        </section>
+      </section>
+
+      <!-- 单词学习页面 -->
+      <section id="page-vocab" class="page">
+        <div class="card-panel">
+          <div class="panel-head">
+            <div>
+              <div class="card-title">单词学习 🪴</div>
+              <div class="hint">点击释义，高亮并加入生词本；完成后可以做听写 / 释义多轮复习。</div>
+            </div>
+            <button class="btn secondary" id="btnReview">快速复习</button>
+          </div>
+          <div class="vocab-flex">
+            <div class="vocab-main">
+              <div class="vocab-word" id="vocabWord">earthquake</div>
+              <div class="pill ghost" id="vocabFreq">高频</div>
+              <div class="vocab-options" id="vocabOptions"></div>
+              <div class="vocab-btns">
+                <button class="btn primary" id="knowBtn">认识 ✅</button>
+                <button class="btn ghost"   id="dontKnowBtn">不认识 ❌</button>
+                <button class="btn ghost"   id="addNotebookBtn">加入生词本</button>
+              </div>
+            </div>
+            <div class="vocab-detail" id="vocabDetail"></div>
+          </div>
         </div>
       </section>
 
-      <!-- 下面是各个板块的“详细页面”，默认不在首页显示：detail-page hidden -->
-      <section class="card-panel large detail-page hidden" id="vocab">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">单词学习 🪴</div>
-            <div class="hint">点击释义，高亮加入生词本；完成后可做听写 / 释义复习。</div>
-          </div>
-          <button class="btn secondary" id="btnReview">快速复习</button>
-        </div>
-        <div class="vocab-flex">
-          <div class="vocab-main">
-            <div class="vocab-word" id="vocabWord">earthquake</div>
-            <div class="pill ghost" id="vocabFreq">高频</div>
-            <div class="vocab-options" id="vocabOptions"></div>
-            <div class="vocab-btns">
-              <button class="btn primary" id="knowBtn">认识 ✅</button>
-              <button class="btn ghost" id="dontKnowBtn">不认识 ❌</button>
-              <button class="btn ghost" id="addNotebookBtn">加入生词本</button>
+      <!-- 单词本页面 -->
+      <section id="page-notebook" class="page">
+        <div class="card-panel">
+          <div class="card-title-row">
+            <div class="card-title">单词本 📚</div>
+            <div class="nb-tabs">
+              <button class="nb-tab active" data-sort="recent">按最新</button>
+              <button class="nb-tab" data-sort="count">按点击次数</button>
             </div>
           </div>
-          <div class="vocab-detail" id="vocabDetail"></div>
+          <p class="hint">记录你在各模块点击查询过的所有生词，可按最近添加或点击次数排序，并支持导出。</p>
+          <div id="notebookList" class="list"></div>
+          <div class="actions">
+            <button id="exportNotebookExcel" class="btn">导出 Excel</button>
+            <button id="exportNotebookPdf" class="btn ghost">导出 PDF</button>
+          </div>
         </div>
       </section>
 
-      <section class="card-panel detail-page hidden" id="listening">
-        <div class="card-title">听力训练 🎧</div>
-        <div class="hint">i+1 难度，精听 + 跟读，支持计时记录。</div>
-        <div class="timer-row">
-          <span class="timer" data-module="listening">00:00</span>
-          <button class="btn big-btn start-btn" data-module="listening">开始</button>
+      <!-- 各训练页面：只显示对应模块内容 -->
+      <section id="page-listening" class="page">
+        <div class="card-panel">
+          <div class="card-title">听力训练 🎧</div>
+          <div class="hint">i+1 难度：精听 + 跟读，支持计时记录。</div>
+          <div class="timer-row">
+            <span class="timer" data-module="listening">00:00</span>
+            <button class="btn big-btn start-btn" data-module="listening">开始</button>
+          </div>
         </div>
       </section>
 
-      <section class="card-panel detail-page hidden" id="speaking">
-        <div class="card-title">口语训练 🗣️</div>
-        <div class="hint">i+1 难度，真题口语卡片 + 录音跟读，支持计时。</div>
-        <div class="timer-row">
-          <span class="timer" data-module="speaking">00:00</span>
-          <button class="btn big-btn start-btn" data-module="speaking">开始</button>
+      <section id="page-speaking" class="page">
+        <div class="card-panel">
+          <div class="card-title">口语训练 🗣️</div>
+          <div class="hint">i+1 难度：真题口语卡片 + 录音跟读，支持计时。</div>
+          <div class="timer-row">
+            <span class="timer" data-module="speaking">00:00</span>
+            <button class="btn big-btn start-btn" data-module="speaking">开始</button>
+          </div>
         </div>
       </section>
 
-      <section class="card-panel detail-page hidden" id="reading">
-        <div class="card-title">阅读训练 📖</div>
-        <div class="hint">i+1 难度，长难句精读 + 题型刷题，支持计时。</div>
-        <div class="timer-row">
-          <span class="timer" data-module="reading">00:00</span>
-          <button class="btn big-btn start-btn" data-module="reading">开始</button>
+      <section id="page-reading" class="page">
+        <div class="card-panel">
+          <div class="card-title">阅读训练 📖</div>
+          <div class="hint">i+1 难度：长难句精读 + 题型训练，支持计时。</div>
+          <div class="timer-row">
+            <span class="timer" data-module="reading">00:00</span>
+            <button class="btn big-btn start-btn" data-module="reading">开始</button>
+          </div>
         </div>
       </section>
 
-      <section class="card-panel detail-page hidden" id="writing">
-        <div class="card-title">写作训练 ✏️</div>
-        <div class="hint">Task1 / Task2 拆解 + 范文模仿，支持计时。</div>
-        <div class="timer-row">
-          <span class="timer" data-module="writing">00:00</span>
-          <button class="btn big-btn start-btn" data-module="writing">开始</button>
+      <section id="page-writing" class="page">
+        <div class="card-panel">
+          <div class="card-title">写作训练 ✏️</div>
+          <div class="hint">Task1 / Task2 拆解 + 范文模仿，支持计时。</div>
+          <div class="timer-row">
+            <span class="timer" data-module="writing">00:00</span>
+            <button class="btn big-btn start-btn" data-module="writing">开始</button>
+          </div>
         </div>
       </section>
 
-      <section class="card-panel detail-page hidden" id="mock">
-        <div class="card-title">真题演练 🎯（锁定考试参数）</div>
-        <div class="hint">进入后自动计时，本模块耗时不计入上方学习时长图。</div>
-        <div class="timer-row">
-          <span class="timer" id="mockTimer">00:00</span>
-          <button class="btn primary" id="startMock">开始模拟</button>
-        </div>
-        <div id="mockReport" class="report"></div>
-      </section>
-
-      <section class="card-panel detail-page hidden" id="idiom">
-        <div class="card-title">地道英语 / 俚语 / 热梗 🌈</div>
-        <div class="search-row">
-          <input id="idiomSearch" placeholder="输入英文或中文关键词，如 awesome / LOL" />
-          <button id="searchIdiom" class="btn">查询</button>
-        </div>
-        <div id="idiomList" class="list"></div>
-      </section>
-
-      <section class="card-panel detail-page hidden" id="export">
-        <div class="card-title">导出学习内容 📦</div>
-        <div class="actions">
-          <button id="exportExcel" class="btn">导出 Excel</button>
-          <button id="exportPdf" class="btn ghost">导出 PDF</button>
-        </div>
-        <div class="hint">导出生词本 / 训练记录 / 真题报告等，方便打印或分享给老师。</div>
-      </section>
-    </main>
-  </div>
-
-  <!-- 登录 / 水平测试浮层 -->
-  <div class="overlay" id="authOverlay">
-    <div class="overlay-card">
-      <div class="overlay-left">
-        <h3>手机号注册 / 登录</h3>
-        <label>手机号（含国家码）</label>
-        <input id="phoneInput" placeholder="+86 13800138000" />
-        <label>验证码</label>
-        <div class="inline">
-          <input id="otpInput" placeholder="6 位数字" />
-          <button id="sendOtp" class="btn ghost">发送验证码</button>
-        </div>
-        <button id="verifyOtp" class="btn primary full">登录</button>
-        <div class="hint">当前为演示模式，不发送真实短信。如需正式环境可接入 Supabase。</div>
-      </div>
-      <div class="overlay-right">
-        <h3>入站水平测试（先估分）</h3>
-        <div class="slider-group">
-          <span>听力</span><input type="range" min="0" max="9" step="0.5" value="5" id="testListening"><span id="valListening">5</span>
-        </div>
-        <div class="slider-group">
-          <span>口语</span><input type="range" min="0" max="9" step="0.5" value="5" id="testSpeaking"><span id="valSpeaking">5</span>
-        </div>
-        <div class="slider-group">
-          <span>阅读</span><input type="range" min="0" max="9" step="0.5" value="5" id="testReading"><span id="valReading">5</span>
-        </div>
-        <div class="slider-group">
-          <span>写作</span><input type="range" min="0" max="9" step="0.5" value="5" id="testWriting"><span id="valWriting">5</span>
-        </div>
-        <button id="saveProfile" class="btn primary full">保存分数 & 进入花园</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+      <!-- 真题演练页面：自动计时，不计入柱状图 -->
+      <section id="page-mock" class="page">
+        以免回复过长，这里省略。
