@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IELTS Learning Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Icons & emoji are inline; no extra assets needed -->
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">IELTS Learning Hub 🌱</div>
+    <div class="top-stats">
+      <div class="pill">目标平均分：<span id="targetAverage">-</span></div>
+      <div class="pill accent">距离考试：<span id="examCountdown">未设置</span></div>
+      <div class="pill ghost" id="authStatus">未登录</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 每日鸡汤 -->
+    <section class="card highlight" id="dailyQuoteCard">
+      <div class="section-title">Daily Boost 💬</div>
+      <div id="dailyQuoteEn" class="quote-en">Keep going, your 7.0 is loading...</div>
+      <div id="dailyQuoteCn" class="quote-cn">坚持下去，你的 7 分正在赶来！</div>
+      <div class="quote-actions">
+        <button id="quotePlay" class="btn ghost">播放发音</button>
+        <button id="quoteSave" class="btn ghost">收藏句子</button>
+      </div>
+    </section>
+
+    <!-- 登录与测试 -->
+    <section class="card" id="authCard">
+      <div class="section-title">手机号登录 / 入站测试</div>
+      <div class="grid-2">
+        <div>
+          <label>手机号（含国家码）</label>
+          <input id="phoneInput" placeholder="+86 13800138000" />
+          <label>验证码</label>
+          <div class="inline">
+            <input id="otpInput" placeholder="6 位数字" />
+            <button id="sendOtp" class="btn">发送验证码</button>
+          </div>
+          <button id="verifyOtp" class="btn primary full">登录</button>
+          <div class="hint">若短信不可用，可在 Supabase 控制台启用测试或改用邮箱魔法链接。</div>
+        </div>
+        <div>
+          <label>入站简易测试（可先估分）</label>
+          <div class="slider-group">
+            <span>听力</span><input type="range" min="0" max="9" step="0.5" value="5" id="testListening"><span id="valListening">5</span>
+          </div>
+          <div class="slider-group">
+            <span>口语</span><input type="range" min="0" max="9" step="0.5" value="5" id="testSpeaking"><span id="valSpeaking">5</span>
+          </div>
+          <div class="slider-group">
+            <span>阅读</span><input type="range" min="0" max="9" step="0.5" value="5" id="testReading"><span id="valReading">5</span>
+          </div>
+          <div class="slider-group">
+            <span>写作</span><input type="range" min="0" max="9" step="0.5" value="5" id="testWriting"><span id="valWriting">5</span>
+          </div>
+          <label>目标考试日期</label>
+          <input type="date" id="examDateInput" />
+          <button id="saveProfile" class="btn primary full">保存目标分 & 考试日期</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 首页四宫格 + 柱状图 -->
+    <section class="card" id="homeCard">
+      <div class="section-title">首页概览</div>
+      <div class="grid-4">
+        <div class="tile" data-target="listening">听力训练 🎧</div>
+        <div class="tile" data-target="speaking">口语训练 🎙️</div>
+        <div class="tile" data-target="reading">阅读训练 📖</div>
+        <div class="tile" data-target="writing">写作训练 ✍️</div>
+      </div>
+      <div class="actions">
+        <button class="btn">单词背诵</button>
+        <button class="btn ghost">真题演练</button>
+        <button class="btn ghost">地道英语</button>
+      </div>
+      <canvas id="timeChart" height="140"></canvas>
+    </section>
+
+    <!-- 词汇背诵 -->
+    <section class="card" id="vocabCard">
+      <div class="section-title">词汇背诵 🪴</div>
+      <div class="grid-2">
+        <div class="vocab-visual">
+          <div id="vocabImage" class="vocab-image">🗺️</div>
+          <div id="vocabWord" class="vocab-word">earthquake</div>
+          <div id="vocabFreq" class="pill ghost">高频</div>
+        </div>
+        <div>
+          <div id="vocabOptions" class="options"></div>
+          <div class="vocab-actions">
+            <button id="knowBtn" class="btn primary">认识 ✅</button>
+            <button id="dontKnowBtn" class="btn danger">不认识 ❌</button>
+            <button id="addNotebookBtn" class="btn ghost">加入生词本</button>
+          </div>
+          <div class="vocab-detail" id="vocabDetail"></div>
+          <div class="vocab-review">
+            <span>复习模式：</span>
+            <button class="btn ghost" data-review="dictation">听写拼写</button>
+            <button class="btn ghost" data-review="meaning">释义点击</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 生词本 -->
+    <section class="card" id="notebookCard">
+      <div class="section-title">生词本 📒</div>
+      <div id="notebookList" class="list"></div>
+      <button id="reviewNotebook" class="btn primary">本页快速复习</button>
+    </section>
+
+    <!-- 训练模块 -->
+    <section class="card" id="trainingCard">
+      <div class="section-title">听说读写训练 ⏱️</div>
+      <div class="grid-4">
+        <div class="mini-tile">
+          <div class="mini-title">听力</div>
+          <div>i+1 难度</div>
+          <div class="timer" data-module="listening">00:00</div>
+          <button class="btn ghost start-btn" data-module="listening">开始</button>
+        </div>
+        <div class="mini-tile">
+          <div class="mini-title">口语</div>
+          <div>i+1 难度</div>
+          <div class="timer" data-module="speaking">00:00</div>
+          <button class="btn ghost start-btn" data-module="speaking">开始</button>
+        </div>
+        <div class="mini-tile">
+          <div class="mini-title">阅读</div>
+          <div>i+1 难度</div>
+          <div class="timer" data-module="reading">00:00</div>
+          <button class="btn ghost start-btn" data-module="reading">开始</button>
+        </div>
+        <div class="mini-tile">
+          <div class="mini-title">写作</div>
+          <div>i+1 难度</div>
+          <div class="timer" data-module="writing">00:00</div>
+          <button class="btn ghost start-btn" data-module="writing">开始</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 真题演练 -->
+    <section class="card" id="mockCard">
+      <div class="section-title">真题演练 🎯（锁定考试参数）</div>
+      <div class="hint">全真计时，倍速/音色/口音/主题已锁定。</div>
+      <button id="startMock" class="btn primary">开始模拟</button>
+      <div id="mockReport" class="report"></div>
+    </section>
+
+    <!-- 地道英语 -->
+    <section class="card" id="idiomCard">
+      <div class="section-title">地道英语 / 俚语 / 热梗 🎬</div>
+      <div class="inline">
+        <input id="idiomSearch" placeholder="输入英文或中文关键词" />
+        <button id="searchIdiom" class="btn">查询</button>
+      </div>
+      <div id="idiomList" class="list"></div>
+    </section>
+
+    <!-- 导出 -->
+    <section class="card" id="exportCard">
+      <div class="section-title">导出学习内容</div>
+      <div class="actions">
+        <button id="exportExcel" class="btn">导出 Excel</button>
+        <button id="exportPdf" class="btn ghost">导出 PDF</button>
+      </div>
+      <div class="hint">导出生词本 / 错题本 / 真题报告 / 句式库。</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>Keep pushing, 7.0 is on the way! 🚀</div>
+  </footer>
+
+  <!-- Vendor via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
