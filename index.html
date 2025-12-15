@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="layout">
@@ -29,28 +29,34 @@
 
     <main class="main">
       <header class="header">
-        <div class="tagline">“The journey of a thousand miles begins with a single step.”</div>
+        <div class="tagline">
+          <div class="quote-en">“The journey of a thousand miles begins with a single step.”</div>
+          <div class="quote-cn">千里之行，始于足下</div>
+        </div>
         <div class="top-right">
           <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
-          <div class="chip">TARGET AVG <span id="targetAverage">7</span></div>
+          <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
           <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
-          <div class="avatar">U</div>
+          <button class="avatar" id="btnAuth">U</button>
         </div>
       </header>
 
       <section class="hero" id="hero">
         <div class="hero-left">
-          <p class="hello">早安，准7分选手！👋</p>
-          <p class="status">今日庄园状态：<span class="status-label">需除草</span></p>
+          <p class="hello">早安，准 <span id="avgDisplay">7.0</span> 分选手！✨</p>
+          <p class="status">今日庄园状态：<span class="status-label">需除草</span> (ง •̀_•́)ง</p>
           <div class="hero-actions">
             <button class="btn primary" id="ctaEnter">进入我的庄园</button>
-            <button class="btn ghost" id="ctaExamDate">设置考试日期</button>
+            <label class="btn ghost date-btn">
+              设置考试日期
+              <input type="date" id="examDateInput" />
+            </label>
           </div>
-          <div class="hero-icons">🏡 🌽 🌲</div>
+          <div class="hero-icons">🏡 🌽 🌲 😊</div>
         </div>
         <div class="word-card">
-          <div class="word-title">单词突击</div>
-          <div class="word-num"><span id="wordToday">0</span>/30</div>
+          <div class="word-title">单词学习</div>
+          <div class="word-num"><span id="wordToday">0</span>/<input id="wordTarget" type="number" value="30" min="1" max="200" /></div>
           <button class="btn secondary" id="ctaVocab">开始背诵</button>
         </div>
       </section>
@@ -59,37 +65,45 @@
         <h3>专项突破 (Target Gaps)</h3>
         <div class="target-grid">
           <div class="target-card">
-            <div class="target-top">
-              <span class="pill blue">READING</span>
-              <span class="icon">📘</span>
-            </div>
-            <div class="score-row"><span id="readingScore">7.5</span> <span class="label">Target Score</span></div>
+            <div class="target-top"><span class="pill blue">READING</span><span class="icon">📘</span></div>
+            <div class="score-row"><span id="readingScore">7.5</span><span class="label">Target Score</span></div>
             <div class="hint">i+1 推荐：学术类长难句分析</div>
           </div>
           <div class="target-card">
-            <div class="target-top">
-              <span class="pill purple">LISTENING</span>
-              <span class="icon">🎧</span>
-            </div>
-            <div class="score-row"><span id="listeningScore">7</span> <span class="label">Target Score</span></div>
+            <div class="target-top"><span class="pill purple">LISTENING</span><span class="icon">🎧</span></div>
+            <div class="score-row"><span id="listeningScore">7</span><span class="label">Target Score</span></div>
             <div class="hint">i+1 推荐：1.2x 倍速听写</div>
           </div>
           <div class="target-card">
-            <div class="target-top">
-              <span class="pill red">SPEAKING</span>
-              <span class="icon">🎤</span>
-            </div>
-            <div class="score-row"><span id="speakingScore">6.5</span> <span class="label">Target Score</span></div>
+            <div class="target-top"><span class="pill red">SPEAKING</span><span class="icon">🎤</span></div>
+            <div class="score-row"><span id="speakingScore">6.5</span><span class="label">Target Score</span></div>
             <div class="hint">i+1 推荐：Part 2 流利度跟读</div>
           </div>
           <div class="target-card">
-            <div class="target-top">
-              <span class="pill orange">WRITING</span>
-              <span class="icon">✏️</span>
-            </div>
-            <div class="score-row"><span id="writingScore">6.5</span> <span class="label">Target Score</span></div>
+            <div class="target-top"><span class="pill orange">WRITING</span><span class="icon">✏️</span></div>
+            <div class="score-row"><span id="writingScore">6.5</span><span class="label">Target Score</span></div>
             <div class="hint">i+1 推荐：复杂句式汉译英</div>
           </div>
+        </div>
+      </section>
+
+      <section class="grid-two" id="gridQuick">
+        <div class="card-panel quad">
+          <div class="card-title">快捷入口 💫</div>
+          <div class="quad-grid">
+            <button class="quad-item" data-scroll="listening">🎧 听力训练</button>
+            <button class="quad-item" data-scroll="speaking">🗣️ 口语训练</button>
+            <button class="quad-item" data-scroll="reading">📖 阅读训练</button>
+            <button class="quad-item" data-scroll="writing">✏️ 写作训练</button>
+          </div>
+        </div>
+        <div class="card-panel countdown">
+          <div class="card-title">考试倒计时</div>
+          <div class="count-value" id="countValue">未设置</div>
+          <label class="btn ghost date-btn small">
+            重新设置
+            <input type="date" id="examDateInput2" />
+          </label>
         </div>
       </section>
 
@@ -98,17 +112,17 @@
           <div class="card-title">学习时长柱状图</div>
           <canvas id="timeChart" height="220"></canvas>
         </div>
-        <div class="card-panel countdown">
-          <div class="card-title">考试倒计时</div>
-          <div class="count-value" id="countValue">未设置</div>
-          <button class="btn ghost" id="btnSetExam">设置考试日期</button>
+        <div class="card-panel tip-box">
+          <div class="card-title">温馨提示 😊</div>
+          <p>保持每日打卡，i+1 阶梯式提升；复习要跟上节奏，别让遗忘曲线追上你！</p>
         </div>
       </section>
 
+      <!-- 单词学习区 -->
       <section class="card-panel large" id="vocab">
         <div class="panel-head">
           <div>
-            <div class="card-title">词汇背诵 🪴</div>
+            <div class="card-title">单词学习 🪴</div>
             <div class="hint">点击释义，高亮加入生词本；完成后可听写/释义复习。</div>
           </div>
           <button class="btn secondary" id="btnReview">快速复习</button>
@@ -128,6 +142,7 @@
         </div>
       </section>
 
+      <!-- 各训练区 -->
       <section class="card-panel" id="listening">
         <div class="card-title">听力训练 🎧</div>
         <div class="hint">i+1 难度，计时记录</div>
@@ -189,6 +204,32 @@
         <div class="hint">导出生词本 / 错题本 / 真题报告 / 句式库。</div>
       </section>
     </main>
+  </div>
+
+  <!-- 登录/测试浮层 -->
+  <div class="overlay" id="authOverlay">
+    <div class="overlay-card">
+      <div class="overlay-left">
+        <h3>手机号注册 / 登录（演示）</h3>
+        <label>手机号（含国家码）</label>
+        <input id="phoneInput" placeholder="+86 13800138000" />
+        <label>验证码</label>
+        <div class="inline">
+          <input id="otpInput" placeholder="6 位数字" />
+          <button id="sendOtp" class="btn ghost">发送验证码</button>
+        </div>
+        <button id="verifyOtp" class="btn primary full">登录</button>
+        <div class="hint">演示用，不调真实短信；如需真实短信，请配置 Supabase。</div>
+      </div>
+      <div class="overlay-right">
+        <h3>入站简易测试（可先估分）</h3>
+        <div class="slider-group"><span>听力</span><input type="range" min="0" max="9" step="0.5" value="5" id="testListening"><span id="valListening">5</span></div>
+        <div class="slider-group"><span>口语</span><input type="range" min="0" max="9" step="0.5" value="5" id="testSpeaking"><span id="valSpeaking">5</span></div>
+        <div class="slider-group"><span>阅读</span><input type="range" min="0" max="9" step="0.5" value="5" id="testReading"><span id="valReading">5</span></div>
+        <div class="slider-group"><span>写作</span><input type="range" min="0" max="9" step="0.5" value="5" id="testWriting"><span id="valWriting">5</span></div>
+        <button id="saveProfile" class="btn primary full">保存目标分 & 进入首页</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
