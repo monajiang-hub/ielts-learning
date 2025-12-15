@@ -1,5 +1,7 @@
-// 纯前端演示逻辑（无后端依赖）
+// 纯前端演示逻辑：只统计听说读写四科，真题单独计时
+
 let chartInstance = null;
+let currentRange = 'day'; // day/week/month/quarter/year/custom
 let vocabIndex = 0;
 const sampleVocab = [
   { word: "earthquake", meaning: "地震", meaning_en: "sudden shaking of the ground", phrases: "earthquake zone; minor tremor", root: "earth + quake", freq: "高频" },
@@ -15,7 +17,7 @@ const notebook = [];
 function $(id) { return document.getElementById(id); }
 function setText(id, val) { const el = $(id); if (el) el.textContent = val; }
 
-// 导航滚动
+/* 导航滚动 */
 function bindNav() {
   document.querySelectorAll("[data-scroll]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -25,7 +27,7 @@ function bindNav() {
   });
 }
 
-// 考试倒计时
+/* 考试倒计时 */
 function updateCountdown(dateStr) {
   const target = dateStr ? new Date(dateStr) : null;
   const out1 = $("examCountdown");
@@ -42,24 +44,58 @@ function updateCountdown(dateStr) {
   out2 && (out2.textContent = text);
 }
 
-// 渲染时间柱状图（示例数据）
-function renderChart(data) {
+/* 时间范围按钮 */
+function bindRangeTabs() {
+  document.querySelectorAll(".range-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".range-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentRange = tab.dataset.range;
+      renderChart();
+    });
+  });
+}
+
+/* Demo 数据：不同时间范围的四科学习时长（分钟） */
+function getRangeData(range) {
+  // 顺序：听力 / 口语 / 阅读 / 写作
+  switch (range) {
+    case 'day':
+      return [20, 15, 25, 18];
+    case 'week':
+      return [120, 90, 150, 100];
+    case 'month':
+      return [480, 360, 520, 400];
+    case 'quarter':
+      return [1200, 900, 1500, 1100];
+    case 'year':
+      return [4800, 3600, 5200, 4000];
+    case 'custom':
+      return [60, 45, 70, 50]; // 自定义区间示例
+    default:
+      return [20, 15, 25, 18];
+  }
+}
+
+/* 柱状图：仅听说读写四科 */
+function renderChart() {
+  const data = getRangeData(currentRange);
   const ctx = $("timeChart").getContext("2d");
   if (chartInstance) chartInstance.destroy();
   chartInstance = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: ["听力", "口语", "阅读", "写作", "词汇", "真题"],
+      labels: ["听力", "口语", "阅读", "写作"],
       datasets: [{
         data,
-        backgroundColor: ["#60a5fa", "#a78bfa", "#34d399", "#f59e0b", "#22d3ee", "#f97316"],
+        backgroundColor: ["#60a5fa", "#a78bfa", "#34d399", "#f59e0b"],
       }],
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
   });
 }
 
-// 词汇
+/* 词汇逻辑 */
 function shuffle(arr) { return arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]); }
 function renderVocab() {
   const item = sampleVocab[vocabIndex % sampleVocab.length];
@@ -89,7 +125,7 @@ function addToNotebook(item) {
   else notebook.push({ ...item, clicks: 1 });
 }
 
-// 地道英语
+/* 地道英语 */
 function renderIdioms(list) {
   const box = $("idiomList");
   box.innerHTML = "";
@@ -114,7 +150,7 @@ function searchIdioms() {
   renderIdioms(sampleIdioms.filter(it => it.phrase.toLowerCase().includes(q) || (it.cn && it.cn.includes(q))));
 }
 
-// 导出
+/* 导出 */
 function exportExcel() {
   const data = notebook.length ? notebook : [{ word: "demo", meaning: "示例", freq: "中频", clicks: 1 }];
   const ws = XLSX.utils.json_to_sheet(data);
@@ -131,7 +167,7 @@ function exportPdf() {
   doc.save("report.pdf");
 }
 
-// 计时器
+/* 计时器：四科 + 真题（真题不进图） */
 const timers = {};
 function startTimer(module) {
   if (timers[module]) clearInterval(timers[module]);
@@ -145,16 +181,26 @@ function startTimer(module) {
   }, 1000);
 }
 
-// 入站测试/登录浮层
-function showOverlay() {
-  $("authOverlay").classList.add("show");
+let mockTimerId = null;
+function startMockTimer() {
+  if (mockTimerId) clearInterval(mockTimerId);
+  let sec = 0;
+  const el = $("mockTimer");
+  mockTimerId = setInterval(() => {
+    sec += 1;
+    const m = String(Math.floor(sec / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
+    el.textContent = `${m}:${s}`;
+  }, 1000);
 }
-function hideOverlay() {
-  $("authOverlay").classList.remove("show");
-}
+
+/* 入站测试 & 登录浮层 */
+function showOverlay() { $("authOverlay").classList.add("show"); }
+function hideOverlay() { $("authOverlay").classList.remove("show"); }
 function bindTestSliders() {
   ["testListening","testSpeaking","testReading","testWriting"].forEach(id=>{
-    $(id).addEventListener("input", ()=>{
+    const input = $(id);
+    input.addEventListener("input", ()=>{
       setText("valListening", $("testListening").value);
       setText("valSpeaking", $("testSpeaking").value);
       setText("valReading", $("testReading").value);
@@ -174,72 +220,66 @@ function saveProfile() {
   hideOverlay();
 }
 
-// 考试日期
+/* 日期 & 单词目标 */
 function bindDateInputs() {
-  const d1 = $("examDateInput");
-  const d2 = $("examDateInput2");
   const handler = (e)=>{
     const val = e.target.value;
     if (!val) return;
     localStorage.setItem("examDate", val);
     updateCountdown(val);
   };
-  d1 && d1.addEventListener("change", handler);
-  d2 && d2.addEventListener("change", handler);
+  $("examDateInput")?.addEventListener("change", handler);
+  $("examDateInput2")?.addEventListener("change", handler);
 }
-
-// 初始化数据
 function initData() {
   const avg = localStorage.getItem("targetAvg") || "7.0";
   setText("targetAverage", avg);
   setText("avgDisplay", avg);
   setText("coinCount", localStorage.getItem("coins") || "0");
   updateCountdown(localStorage.getItem("examDate"));
-  // 单词目标
+
   const tgt = localStorage.getItem("wordTarget") || "30";
   $("wordTarget").value = tgt;
   $("wordTarget").addEventListener("input", ()=>{
-    const v = Math.max(1, Math.min(200, parseInt($("wordTarget").value||"30",10)));
+    const v = Math.max(1, Math.min(200, parseInt($("wordTarget").value || "30", 10)));
     $("wordTarget").value = v;
     localStorage.setItem("wordTarget", v);
   });
 }
 
-// 首页按钮
+/* 首页行为 & 登录演示 */
 function bindHomeActions() {
   $("ctaEnter").onclick = () => document.getElementById("targets").scrollIntoView({ behavior: "smooth" });
   $("ctaVocab").onclick = () => document.getElementById("vocab").scrollIntoView({ behavior: "smooth" });
   $("btnReview").onclick = () => alert("复习占位：后续可接入听写/释义模式");
-  $("startMock").onclick = () => alert("真题演练占位：后续接入完整评分");
+  $("startMock").onclick = () => { startMockTimer(); alert("真题演练占位：开始计时。"); };
+  $("searchIdiom").onclick = searchIdioms;
+  $("exportExcel").onclick = exportExcel;
+  $("exportPdf").onclick = exportPdf;
   $("btnAuth").onclick = showOverlay;
-}
 
-// 验证码/登录演示（不调短信）
-function bindAuthDemo() {
   $("sendOtp").onclick = () => alert("演示用，不发送真实短信。");
   $("verifyOtp").onclick = () => alert("演示登录成功（未对接真实认证）");
 }
 
-// 入口
+/* 入口 */
 function bootstrap() {
   bindNav();
   bindHomeActions();
   bindTestSliders();
   bindDateInputs();
-  bindAuthDemo();
+  bindRangeTabs();
   initData();
+
   renderVocab();
   renderIdioms(sampleIdioms);
-  renderChart([20, 18, 25, 22, 15, 10]);
+  renderChart();
+
   document.querySelectorAll(".start-btn").forEach(btn => btn.onclick = () => startTimer(btn.dataset.module));
   $("knowBtn").onclick = () => { vocabIndex++; renderVocab(); };
   $("dontKnowBtn").onclick = () => { vocabIndex++; renderVocab(); };
   $("addNotebookBtn").onclick = () => addToNotebook(sampleVocab[vocabIndex % sampleVocab.length]);
-  $("searchIdiom").onclick = searchIdioms;
-  $("exportExcel").onclick = exportExcel;
-  $("exportPdf").onclick = exportPdf;
 
-  // 首次加载显示浮层
   if (!localStorage.getItem("targetAvg")) showOverlay();
   $("saveProfile").onclick = saveProfile;
 }
