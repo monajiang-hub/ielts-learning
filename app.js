@@ -1,8 +1,9 @@
-// 纯前端演示逻辑：听说读写学习时长柱状图 + 各板块切换 + 真题单独计时
+// 纯前端演示逻辑：页面切换 + 四科学习柱状图 + 单词本 + 真题单独计时
 
 let chartInstance = null;
-let currentRange = 'day'; // day / week / month / quarter / year / custom
+let currentRange = 'day'; // day/week/month/quarter/year/custom
 let vocabIndex = 0;
+let mockTimerId = null;
 
 const sampleVocab = [
   { word: "earthquake",  meaning: "地震",     meaning_en: "sudden shaking of the ground", phrases: "earthquake zone; minor tremor", root: "earth + quake",   freq: "高频" },
@@ -15,43 +16,26 @@ const sampleIdioms = [
   { phrase: "hit the books", cn: "刻苦学习",       en: "to begin studying hard",         examples: "I need to hit the books for IELTS." },
 ];
 
-const notebook = [];
-
 function $(id) { return document.getElementById(id); }
 function setText(id, val) { const el = $(id); if (el) el.textContent = val; }
 
-/* ===== 导航 + 快捷入口：显示对应 detail-page，再滚动 ===== */
-function bindNav() {
-  const detailPages = document.querySelectorAll(".detail-page");
+/* ===== 页面切换 ===== */
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(`page-${pageId}`);
+  if (page) page.classList.add('active');
 
-  document.querySelectorAll("[data-scroll]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const targetId = btn.dataset.scroll;
-      const target = document.getElementById(targetId);
-      if (!target) return;
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === pageId);
+  });
+}
 
-      if (targetId === 'hero') {
-        // 首页按钮：隐藏所有 detail 区块
-        detailPages.forEach(sec => sec.classList.add('hidden'));
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        document.querySelectorAll('.nav-item')
-          .forEach(b => b.classList.toggle('active', b.dataset.scroll === 'hero'));
-        return;
-      }
-
-      // 其他：显示对应 detail 区块，隐藏其他
-      if (target.classList.contains('detail-page')) {
-        detailPages.forEach(sec => {
-          if (sec.id === targetId) sec.classList.remove('hidden');
-          else sec.classList.add('hidden');
-        });
-      }
-
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-
-      document.querySelectorAll('.nav-item')
-        .forEach(b => b.classList.toggle('active', b.dataset.scroll === targetId));
-    });
+function bindPageSwitch() {
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => showPage(btn.dataset.page));
+  });
+  document.querySelectorAll('[data-go]').forEach(btn => {
+    btn.addEventListener('click', () => showPage(btn.dataset.go));
   });
 }
 
@@ -59,42 +43,27 @@ function bindNav() {
 function updateCountdown(dateStr) {
   const target = dateStr ? new Date(dateStr) : null;
   const out1 = $("examCountdown");
-  const out2 = $("countValue");
   if (!target || isNaN(target.getTime())) {
     out1 && (out1.textContent = "未设置");
-    out2 && (out2.textContent = "未设置");
     return;
   }
   const diff = target - new Date();
   const days = Math.ceil(diff / 86400000);
   const text = diff <= 0 ? "考试日已到" : `${days} 天`;
   out1 && (out1.textContent = text);
-  out2 && (out2.textContent = text);
 }
 
 function bindDateInputs() {
-  const handler = (e) => {
+  const handler = e => {
     const val = e.target.value;
     if (!val) return;
     localStorage.setItem("examDate", val);
     updateCountdown(val);
   };
   $("examDateInput")?.addEventListener("change", handler);
-  $("examDateInput2")?.addEventListener("change", handler);
 }
 
-/* ===== 柱状图时间范围 tabs ===== */
-function bindRangeTabs() {
-  document.querySelectorAll(".range-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".range-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      currentRange = tab.dataset.range;
-      renderChart();
-    });
-  });
-}
-
+/* ===== 柱状图（只听说读写） ===== */
 function getRangeData(range) {
   // 顺序：听力 / 口语 / 阅读 / 写作
   switch (range) {
@@ -108,7 +77,6 @@ function getRangeData(range) {
   }
 }
 
-/* 只显示听说读写四根柱子 */
 function renderChart() {
   const data = getRangeData(currentRange);
   const ctx = $("timeChart").getContext("2d");
@@ -129,17 +97,32 @@ function renderChart() {
   });
 }
 
-/* ===== 单词学习逻辑 ===== */
-function shuffle(arr) {
-  return arr.map(x => [Math.random(), x])
-            .sort((a, b) => a[0] - b[0])
-            .map(x => x[1]);
+function bindRangeTabs() {
+  document.querySelectorAll(".range-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".range-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentRange = tab.dataset.range;
+      renderChart();
+    });
+  });
+}
+
+/* ===== 单词学习 & 生词本 ===== */
+function getNotebook() {
+  try {
+    return JSON.parse(localStorage.getItem("notebook") || "[]");
+  } catch { return []; }
+}
+function saveNotebook(list) {
+  localStorage.setItem("notebook", JSON.stringify(list));
 }
 
 function renderVocab() {
   const item = sampleVocab[vocabIndex % sampleVocab.length];
   setText("vocabWord", item.word);
   setText("vocabFreq", item.freq);
+
   const options = shuffle([item.meaning, "无害的", "独特的", "鼓舞人心的"]);
   const box = $("vocabOptions");
   box.innerHTML = "";
@@ -147,10 +130,10 @@ function renderVocab() {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.textContent = opt;
-    btn.onclick = () =>
-      btn.classList.add(opt === item.meaning ? "correct" : "wrong");
+    btn.onclick = () => btn.classList.add(opt === item.meaning ? "correct" : "wrong");
     box.appendChild(btn);
   });
+
   $("vocabDetail").innerHTML = `
     <div>中文：${item.meaning}</div>
     <div>英文：${item.meaning_en}</div>
@@ -160,10 +143,91 @@ function renderVocab() {
   `;
 }
 
+function shuffle(arr) {
+  return arr.map(x => [Math.random(), x])
+            .sort((a, b) => a[0] - b[0])
+            .map(x => x[1]);
+}
+
 function addToNotebook(item) {
-  const exist = notebook.find(x => x.word === item.word);
-  if (exist) exist.clicks = (exist.clicks || 1) + 1;
-  else notebook.push({ ...item, clicks: 1 });
+  const list = getNotebook();
+  const now = new Date().toISOString();
+  const exist = list.find(x => x.word === item.word);
+  if (exist) {
+    exist.clicks = (exist.clicks || 0) + 1;
+    exist.lastClickedAt = now;
+  } else {
+    list.unshift({
+      word: item.word,
+      meaning: item.meaning,
+      freq: item.freq,
+      createdAt: now,
+      lastClickedAt: now,
+      clicks: 1,
+    });
+  }
+  saveNotebook(list);
+  renderNotebook(currentNotebookSort);
+}
+
+let currentNotebookSort = "recent"; // recent | count
+
+function renderNotebook(sortBy = "recent") {
+  currentNotebookSort = sortBy;
+  const list = getNotebook();
+  if (!list.length) {
+    $("notebookList").innerHTML = `<div class="hint">还没有任何生词，去各模块多多点击生词吧～</div>`;
+    return;
+  }
+  let data = [...list];
+  if (sortBy === "count") {
+    data.sort((a,b) => (b.clicks||0) - (a.clicks||0));
+  } else {
+    data.sort((a,b) => new Date(b.lastClickedAt) - new Date(a.lastClickedAt));
+  }
+
+  $("notebookList").innerHTML = data.map(item => `
+    <div class="list-item">
+      <div>
+        <div><strong>${item.word}</strong> <span class="hint">(${item.freq})</span></div>
+        <div class="hint">中文：${item.meaning}</div>
+        <div class="hint">收录日期：${item.createdAt.slice(0,10)} / 点击次数：${item.clicks || 0}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function bindNotebookSort() {
+  document.querySelectorAll(".nb-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".nb-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderNotebook(btn.dataset.sort);
+    });
+  });
+}
+
+/* 单词本导出 */
+function exportNotebookExcel() {
+  const data = getNotebook();
+  if (!data.length) { alert("单词本为空"); return; }
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "notebook");
+  XLSX.writeFile(wb, "notebook.xlsx");
+}
+function exportNotebookPdf() {
+  const data = getNotebook();
+  if (!data.length) { alert("单词本为空"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("IELTS 单词本", 10, 10);
+  let y = 20;
+  data.slice(0,40).forEach(item => {
+    doc.text(`${item.word}  (${item.freq})  ${item.meaning}  点击:${item.clicks||0}`, 10, y);
+    y += 6;
+  });
+  doc.save("notebook.pdf");
 }
 
 /* ===== 地道英语 ===== */
@@ -197,25 +261,15 @@ function searchIdioms() {
   ));
 }
 
-/* ===== 导出 ===== */
+/* ===== 导出（生词本以外的全局导出占位） ===== */
 function exportExcel() {
-  const data = notebook.length ? notebook : [{ word: "demo", meaning: "示例", freq: "中频", clicks: 1 }];
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Notebook");
-  XLSX.writeFile(wb, "notebook.xlsx");
+  alert("导出占位：可扩展为导出全部学习记录。");
 }
-
 function exportPdf() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("雅思学习报告", 10, 10);
-  doc.text("目标平均分: " + (localStorage.getItem("targetAvg") || "7.0"), 10, 20);
-  doc.text("考试倒计时: " + ($("examCountdown").textContent || "-"), 10, 30);
-  doc.save("report.pdf");
+  alert("导出占位：可扩展为导出综合学习报告。");
 }
 
-/* ===== 四科计时器 & 真题计时（真题不进柱状图） ===== */
+/* ===== 计时器（四科） & 真题计时 ===== */
 const timers = {};
 function startTimer(module) {
   if (timers[module]) clearInterval(timers[module]);
@@ -229,11 +283,10 @@ function startTimer(module) {
   }, 1000);
 }
 
-let mockTimerId = null;
 function startMockTimer() {
   if (mockTimerId) clearInterval(mockTimerId);
   let sec = 0;
-  const el = $("mockTimer");
+  const el = document.querySelector("#page-mock .timer");
   mockTimerId = setInterval(() => {
     sec += 1;
     const m = String(Math.floor(sec / 60)).padStart(2, "0");
@@ -270,13 +323,14 @@ function saveProfile() {
   hideOverlay();
 }
 
-/* ===== 日期 & 单词目标初始化 ===== */
+/* ===== 初始化数据 ===== */
 function initData() {
   const avg = localStorage.getItem("targetAvg") || "7.0";
   setText("targetAverage", avg);
   setText("avgDisplay", avg);
 
-  updateCountdown(localStorage.getItem("examDate"));
+  const exam = localStorage.getItem("examDate");
+  updateCountdown(exam);
 
   const tgt = localStorage.getItem("wordTarget") || "30";
   $("wordTarget").value = tgt;
@@ -285,60 +339,63 @@ function initData() {
     $("wordTarget").value = v;
     localStorage.setItem("wordTarget", v);
   });
+
+  renderNotebook(currentNotebookSort);
 }
 
-/* ===== 首页按钮 & 登录演示 ===== */
+/* ===== 绑定首页按钮 & 登录演示 ===== */
+let currentNotebookSort = "recent";
+
 function bindHomeActions() {
-  $("ctaEnter").onclick = () => {
-    document.getElementById("modules")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  $("ctaVocab").onclick = () => {
-    const vocabSec = $("vocab");
-    if (vocabSec) {
-      vocabSec.classList.remove("hidden");
-      vocabSec.scrollIntoView({ behavior: "smooth", block: "start" });
-      document.querySelectorAll('.nav-item')
-        .forEach(b => b.classList.toggle('active', b.dataset.scroll === 'vocab'));
-    }
-  };
-  $("btnReview").onclick = () => alert("复习占位：后续可接入听写 / 释义模式");
-
-  $("startMock").onclick = () => {
-    startMockTimer();
-    alert("真题演练计时已开始（不计入上方学习时长）");
-  };
-
-  $("searchIdiom").onclick = searchIdioms;
-  $("exportExcel").onclick = exportExcel;
-  $("exportPdf").onclick = exportPdf;
   $("btnAuth").onclick = showOverlay;
-
   $("sendOtp").onclick = () => alert("演示模式：不发送真实短信。");
   $("verifyOtp").onclick = () => alert("演示登录成功～");
+
+  $("searchIdiom")?.addEventListener("click", searchIdioms);
+  $("exportExcel")?.addEventListener("click", exportExcel);
+  $("exportPdf")?.addEventListener("click", exportPdf);
+  $("startMock")?.addEventListener("click", () => {
+    startMockTimer();
+    alert("真题演练计时已开始（不计入上方学习时长）");
+  });
+
+  document.querySelectorAll(".start-btn").forEach(btn => {
+    btn.addEventListener("click", () => startTimer(btn.dataset.module));
+  });
+
+  $("knowBtn")?.addEventListener("click", () => { vocabIndex++; renderVocab(); });
+  $("dontKnowBtn")?.addEventListener("click", () => { vocabIndex++; renderVocab(); });
+  $("addNotebookBtn")?.addEventListener("click", () => {
+    const item = sampleVocab[vocabIndex % sampleVocab.length];
+    addToNotebook(item);
+    alert("已加入单词本");
+  });
+
+  $("exportNotebookExcel")?.addEventListener("click", exportNotebookExcel);
+  $("exportNotebookPdf")?.addEventListener("click", exportNotebookPdf);
+
+  document.querySelectorAll(".nb-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".nb-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderNotebook(btn.dataset.sort);
+    });
+  });
 }
 
 /* ===== 入口 ===== */
 function bootstrap() {
-  bindNav();
-  bindHomeActions();
-  bindTestSliders();
+  bindPageSwitch();
   bindDateInputs();
   bindRangeTabs();
+  bindTestSliders();
+  bindHomeActions();
   initData();
 
   renderVocab();
   renderIdioms(sampleIdioms);
   renderChart();
 
-  document.querySelectorAll(".start-btn").forEach(btn =>
-    btn.addEventListener("click", () => startTimer(btn.dataset.module))
-  );
-
-  $("knowBtn").onclick       = () => { vocabIndex++; renderVocab(); };
-  $("dontKnowBtn").onclick   = () => { vocabIndex++; renderVocab(); };
-  $("addNotebookBtn").onclick= () => addToNotebook(sampleVocab[vocabIndex % sampleVocab.length]);
-
-  // 首次没有 targetAvg 时，弹出水平测试
   if (!localStorage.getItem("targetAvg")) showOverlay();
   $("saveProfile").onclick = saveProfile;
 }
