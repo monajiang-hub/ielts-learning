@@ -1,47 +1,12 @@
-// 简易前端 SPA，使用 supabase-js CDN（无需打包）
-const SUPABASE_URL = "https://admazpzjskimyrwczjus.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbWF6cHpqc2tpbXlyd2N6anVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTg4MjgsImV4cCI6MjA4MTM3NDgyOH0.CP3_qYwIJaWlgaBV7xUREC88XjNJotdZFPzui2ihoeI";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// 简单前端逻辑（纯静态，无后端依赖）
 
-let currentUser = null;
-let profile = null;
 let chartInstance = null;
 let vocabIndex = 0;
 
-const sampleQuotes = [
-  { en: "Keep going, your 7.0 is loading...", cn: "坚持下去，你的 7 分正在赶来！" },
-  { en: "One more set today, one less regret tomorrow.", cn: "今天多练一组，明天少留遗憾。" },
-  { en: "Small steps, big gains.", cn: "小步快走，积跬步至千里。" }
-];
-
 const sampleVocab = [
-  {
-    word: "earthquake",
-    meaning: "地震",
-    meaning_en: "a sudden shaking of the ground",
-    phrases: "earthquake zone; minor tremor",
-    root: "earth + quake",
-    freq: "高频",
-    theme: "自然",
-  },
-  {
-    word: "sustainable",
-    meaning: "可持续的",
-    meaning_en: "able to be maintained at a certain rate or level",
-    phrases: "sustainable development; sustainable energy",
-    root: "sustain + able",
-    freq: "高频",
-    theme: "科技/环境",
-  },
-  {
-    word: "biodiversity",
-    meaning: "生物多样性",
-    meaning_en: "variety of life in the world or a particular habitat",
-    phrases: "conserve biodiversity; biodiversity loss",
-    root: "bio + diversity",
-    freq: "中频",
-    theme: "自然",
-  },
+  { word: "earthquake", meaning: "地震", meaning_en: "sudden shaking of the ground", phrases: "earthquake zone; minor tremor", root: "earth + quake", freq: "高频" },
+  { word: "sustainable", meaning: "可持续的", meaning_en: "able to be maintained", phrases: "sustainable development", root: "sustain + able", freq: "高频" },
+  { word: "biodiversity", meaning: "生物多样性", meaning_en: "variety of life in habitat", phrases: "conserve biodiversity", root: "bio + diversity", freq: "中频" },
 ];
 
 const sampleIdioms = [
@@ -49,54 +14,46 @@ const sampleIdioms = [
   { phrase: "hit the books", cn: "刻苦学习", en: "to begin studying hard", examples: "I need to hit the books for IELTS." },
 ];
 
+const notebook = [];
+
 function $(id) { return document.getElementById(id); }
+function setText(id, val) { const el = $(id); if (el) el.textContent = val; }
 
-function setText(id, text) {
-  const el = $(id);
-  if (el) el.textContent = text;
+// 左侧导航滚动
+function bindNav() {
+  document.querySelectorAll("[data-scroll]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.scroll);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
 }
 
-function updateSliders() {
-  setText("valListening", $("testListening").value);
-  setText("valSpeaking", $("testSpeaking").value);
-  setText("valReading", $("testReading").value);
-  setText("valWriting", $("testWriting").value);
-}
-
-function calcTargetAverage() {
-  const vals = [
-    parseFloat($("testListening").value),
-    parseFloat($("testSpeaking").value),
-    parseFloat($("testReading").value),
-    parseFloat($("testWriting").value),
-  ];
-  const avg = (vals.reduce((a, b) => a + b, 0) / 4).toFixed(1);
-  setText("targetAverage", avg);
-  return avg;
-}
-
+// 考试倒计时
 function updateCountdown(dateStr) {
-  if (!dateStr) {
-    setText("examCountdown", "未设置");
+  const target = dateStr ? new Date(dateStr) : null;
+  const out1 = $("examCountdown");
+  const out2 = $("countValue");
+  if (!target || isNaN(target.getTime())) {
+    out1 && (out1.textContent = "未设置");
+    out2 && (out2.textContent = "未设置");
     return;
   }
-  const target = new Date(dateStr);
-  const now = new Date();
-  const diff = target - now;
-  if (diff <= 0) {
-    setText("examCountdown", "考试日已到，加油冲刺！");
-    return;
-  }
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  setText("examCountdown", `${days} 天`);
+  const diff = target - new Date();
+  const days = Math.ceil(diff / 86400000);
+  const text = diff <= 0 ? "考试日已到" : `${days} 天`;
+  out1 && (out1.textContent = text);
+  out2 && (out2.textContent = text);
 }
 
-function pickQuote() {
-  const q = sampleQuotes[Math.floor(Math.random() * sampleQuotes.length)];
-  setText("dailyQuoteEn", q.en);
-  setText("dailyQuoteCn", q.cn);
+function setExamDate() {
+  const val = prompt("请输入考试日期（YYYY-MM-DD）：", localStorage.getItem("examDate") || "");
+  if (!val) return;
+  localStorage.setItem("examDate", val);
+  updateCountdown(val);
 }
 
+// 时间柱状图（示例数据）
 function renderChart(data) {
   const ctx = $("timeChart").getContext("2d");
   if (chartInstance) chartInstance.destroy();
@@ -105,91 +62,37 @@ function renderChart(data) {
     data: {
       labels: ["听力", "口语", "阅读", "写作", "词汇", "真题"],
       datasets: [{
-        label: "学习分钟",
         data,
-        backgroundColor: ["#22d3ee", "#38bdf8", "#818cf8", "#a78bfa", "#34d399", "#f97316"],
-      }]
+        backgroundColor: ["#60a5fa", "#a78bfa", "#34d399", "#f59e0b", "#22d3ee", "#f97316"],
+      }],
     },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
   });
 }
 
-async function sendOtp() {
-  const phone = $("phoneInput").value.trim();
-  if (!phone) return alert("请输入手机号（含国家码）");
-  const { error } = await supabase.auth.signInWithOtp({ phone });
-  if (error) alert("发送失败：" + error.message);
-  else alert("验证码已发送，请查收短信。");
-}
-
-async function verifyOtp() {
-  const phone = $("phoneInput").value.trim();
-  const token = $("otpInput").value.trim();
-  if (!phone || !token) return alert("请输入手机号和验证码");
-  const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-  if (error) return alert("登录失败：" + error.message);
-  currentUser = data.user;
-  setText("authStatus", "已登录");
-  await loadProfile();
-}
-
-async function loadProfile() {
-  if (!currentUser) return;
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single();
-  if (error && error.code !== "PGRST116") console.warn(error);
-  profile = data || null;
-  if (profile) {
-    $("testListening").value = profile.target_listening ?? 5;
-    $("testSpeaking").value = profile.target_speaking ?? 5;
-    $("testReading").value = profile.target_reading ?? 5;
-    $("testWriting").value = profile.target_writing ?? 5;
-    if (profile.target_exam_date) $("examDateInput").value = profile.target_exam_date.split("T")[0];
-    updateSliders();
-    calcTargetAverage();
-    updateCountdown(profile.target_exam_date);
-  }
-}
-
-async function saveProfile() {
-  if (!currentUser) return alert("请先登录");
-  const payload = {
-    id: currentUser.id,
-    phone: $("phoneInput").value.trim(),
-    target_listening: $("testListening").value,
-    target_speaking: $("testSpeaking").value,
-    target_reading: $("testReading").value,
-    target_writing: $("testWriting").value,
-    target_exam_date: $("examDateInput").value || null,
-    voice_gender: "female",
-    voice_accent: "en-uk",
-    playback_speed: 1.0,
-  };
-  const { error } = await supabase.from("profiles").upsert(payload);
-  if (error) return alert("保存失败：" + error.message);
-  alert("保存成功！");
-  profile = payload;
-  calcTargetAverage();
-  updateCountdown(payload.target_exam_date);
-}
+// 词汇逻辑
+function shuffle(arr) { return arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]); }
 
 function renderVocab() {
   const item = sampleVocab[vocabIndex % sampleVocab.length];
   setText("vocabWord", item.word);
   setText("vocabFreq", item.freq);
-  $("vocabImage").textContent = "🖼️";
-  const optionsEl = $("vocabOptions");
-  optionsEl.innerHTML = "";
+
   const options = shuffle([item.meaning, "无害的", "独特的", "鼓舞人心的"]);
+  const box = $("vocabOptions");
+  box.innerHTML = "";
+
   options.forEach(opt => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.textContent = opt;
-    btn.onclick = () => {
-      if (opt === item.meaning) btn.classList.add("correct");
-      else btn.classList.add("wrong");
-    };
-    optionsEl.appendChild(btn);
+    btn.onclick = () => btn.classList.add(opt === item.meaning ? "correct" : "wrong");
+    box.appendChild(btn);
   });
+
   $("vocabDetail").innerHTML = `
     <div>中文：${item.meaning}</div>
     <div>英文：${item.meaning_en}</div>
@@ -199,38 +102,13 @@ function renderVocab() {
   `;
 }
 
-function shuffle(arr) {
-  return arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+function addToNotebook(item) {
+  const exist = notebook.find(x => x.word === item.word);
+  if (exist) exist.clicks = (exist.clicks || 1) + 1;
+  else notebook.push({ ...item, clicks: 1 });
 }
 
-const notebook = [];
-function addToNotebook(wordItem) {
-  if (!notebook.find(x => x.word === wordItem.word)) notebook.push({ ...wordItem, clicks: 1 });
-  else notebook.find(x => x.word === wordItem.word).clicks += 1;
-  renderNotebook();
-}
-
-function renderNotebook() {
-  const box = $("notebookList");
-  if (!notebook.length) {
-    box.innerHTML = `<div class="hint">还没有生词，点击“加入生词本”试试</div>`;
-    return;
-  }
-  box.innerHTML = "";
-  notebook.forEach(item => {
-    const row = document.createElement("div");
-    row.className = "list-item";
-    row.innerHTML = `
-      <div>
-        <div><strong>${item.word}</strong> (${item.freq})</div>
-        <div class="hint">${item.meaning}</div>
-      </div>
-      <div class="pill ghost">点击 ${item.clicks} 次</div>
-    `;
-    box.appendChild(row);
-  });
-}
-
+// 地道英语
 function renderIdioms(list) {
   const box = $("idiomList");
   box.innerHTML = "";
@@ -256,12 +134,12 @@ function renderIdioms(list) {
 function searchIdioms() {
   const q = $("idiomSearch").value.trim().toLowerCase();
   if (!q) return renderIdioms(sampleIdioms);
-  const filtered = sampleIdioms.filter(it =>
-    it.phrase.toLowerCase().includes(q) || (it.cn && it.cn.includes(q)));
-  renderIdioms(filtered);
+  renderIdioms(sampleIdioms.filter(it =>
+    it.phrase.toLowerCase().includes(q) || (it.cn && it.cn.includes(q))
+  ));
 }
 
-// 导出示例：生词本 → Excel
+// 导出
 function exportExcel() {
   const data = notebook.length ? notebook : [{ word: "demo", meaning: "示例", freq: "中频", clicks: 1 }];
   const ws = XLSX.utils.json_to_sheet(data);
@@ -270,36 +148,16 @@ function exportExcel() {
   XLSX.writeFile(wb, "notebook.xlsx");
 }
 
-// 导出示例：PDF
 function exportPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  doc.text("雅思学习报告 (demo)", 10, 10);
-  doc.text("目标平均分: " + ($("targetAverage").textContent || "-"), 10, 20);
+  doc.text("雅思学习报告", 10, 10);
+  doc.text("目标平均分: " + (localStorage.getItem("targetAvg") || "7.0"), 10, 20);
   doc.text("考试倒计时: " + ($("examCountdown").textContent || "-"), 10, 30);
   doc.save("report.pdf");
 }
 
-function bindEvents() {
-  ["testListening", "testSpeaking", "testReading", "testWriting"].forEach(id => {
-    $(id).addEventListener("input", () => { updateSliders(); calcTargetAverage(); });
-  });
-  $("sendOtp").onclick = sendOtp;
-  $("verifyOtp").onclick = verifyOtp;
-  $("saveProfile").onclick = saveProfile;
-  $("knowBtn").onclick = () => { vocabIndex++; renderVocab(); };
-  $("dontKnowBtn").onclick = () => { vocabIndex++; renderVocab(); };
-  $("addNotebookBtn").onclick = () => addToNotebook(sampleVocab[vocabIndex % sampleVocab.length]);
-  document.querySelectorAll("[data-review]").forEach(btn => btn.onclick = () => alert("复习模式占位：" + btn.dataset.review));
-  document.querySelectorAll(".start-btn").forEach(btn => btn.onclick = () => startTimer(btn.dataset.module));
-  $("reviewNotebook").onclick = () => alert("本页复习占位，可切换听写/释义模式");
-  $("searchIdiom").onclick = searchIdioms;
-  $("exportExcel").onclick = exportExcel;
-  $("exportPdf").onclick = exportPdf;
-  $("quotePlay").onclick = () => alert("发音播放占位，可接入 TTS");
-  $("quoteSave").onclick = () => alert("已收藏到句式库");
-}
-
+// 计时器
 const timers = {};
 function startTimer(module) {
   if (timers[module]) clearInterval(timers[module]);
@@ -313,35 +171,45 @@ function startTimer(module) {
   }, 1000);
 }
 
+// 初始化
 function bootstrap() {
-  bindEvents();
-  updateSliders();
-  calcTargetAverage();
-  pickQuote();
+  bindNav();
+
+  // 顶部按钮跳转 / 设置日期
+  $("ctaEnter").onclick = () => document.getElementById("targets").scrollIntoView({ behavior: "smooth" });
+  $("ctaVocab").onclick = () => document.getElementById("vocab").scrollIntoView({ behavior: "smooth" });
+  $("ctaExamDate").onclick = setExamDate;
+  $("btnSetExam").onclick = setExamDate;
+
+  // 训练计时
+  document.querySelectorAll(".start-btn").forEach(btn =>
+    btn.onclick = () => startTimer(btn.dataset.module)
+  );
+
+  // 词汇按钮
+  $("knowBtn").onclick = () => { vocabIndex++; renderVocab(); };
+  $("dontKnowBtn").onclick = () => { vocabIndex++; renderVocab(); };
+  $("addNotebookBtn").onclick = () => addToNotebook(sampleVocab[vocabIndex % sampleVocab.length]);
+  $("btnReview").onclick = () => alert("复习占位：后续可以接入听写/释义模式");
+
+  // 其他功能
+  $("startMock").onclick = () => alert("真题演练功能占位，后续接入完整评分和真题。");
+  $("searchIdiom").onclick = searchIdioms;
+  $("exportExcel").onclick = exportExcel;
+  $("exportPdf").onclick = exportPdf;
+
+  // 目标均分 / 金币示例
+  const avg = localStorage.getItem("targetAvg") || "7.0";
+  setText("targetAverage", avg);
+  setText("coinCount", localStorage.getItem("coins") || "0");
+
+  // 考试日期 & 倒计时
+  updateCountdown(localStorage.getItem("examDate"));
+
+  // 渲染词汇、地道英语、柱状图
   renderVocab();
-  renderNotebook();
   renderIdioms(sampleIdioms);
-  renderChart([20, 18, 25, 22, 15, 10]); // demo data
-  // 监听登录状态
-  supabase.auth.getSession().then(({ data }) => {
-    if (data.session?.user) {
-      currentUser = data.session.user;
-      setText("authStatus", "已登录");
-      loadProfile();
-    }
-  });
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (session?.user) {
-      currentUser = session.user;
-      setText("authStatus", "已登录");
-      loadProfile();
-    } else {
-      currentUser = null;
-      profile = null;
-      setText("authStatus", "未登录");
-    }
-  });
+  renderChart([20, 18, 25, 22, 15, 10]);
 }
 
 document.addEventListener("DOMContentLoaded", bootstrap);
-
