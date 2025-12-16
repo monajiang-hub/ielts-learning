@@ -485,7 +485,8 @@ function renderChart(range = "today") {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: true,
+      aspectRatio: 2.5,
       plugins: {
         legend: {
           display: false
@@ -820,6 +821,131 @@ function bindExport() {
   }
 }
 
+// 今日计划管理
+function getPlans() {
+  const data = localStorage.getItem("ieltsPlans");
+  return data ? JSON.parse(data) : [];
+}
+
+function savePlans(plans) {
+  localStorage.setItem("ieltsPlans", JSON.stringify(plans));
+}
+
+function renderPlans() {
+  const plans = getPlans();
+  const listEl = document.getElementById("planList");
+  if (!listEl) return;
+  
+  if (plans.length === 0) {
+    listEl.innerHTML = '<div style="color: #9ca3af; font-size: 13px; text-align: center; padding: 20px;">暂无计划，添加一个吧~</div>';
+    return;
+  }
+  
+  listEl.innerHTML = plans.map((plan, idx) => `
+    <div class="plan-item">
+      <input type="checkbox" ${plan.completed ? "checked" : ""} onchange="togglePlan(${idx})" />
+      <span class="plan-item-text" style="${plan.completed ? "text-decoration: line-through; color: #9ca3af;" : ""}">${plan.text}</span>
+    </div>
+  `).join("");
+}
+
+function addPlan() {
+  const input = document.getElementById("planInput");
+  if (!input) return;
+  
+  const text = input.value.trim();
+  if (!text) return;
+  
+  const plans = getPlans();
+  plans.push({ text, completed: false, date: new Date().toISOString() });
+  savePlans(plans);
+  renderPlans();
+  input.value = "";
+}
+
+function togglePlan(idx) {
+  const plans = getPlans();
+  if (plans[idx]) {
+    plans[idx].completed = !plans[idx].completed;
+    savePlans(plans);
+    renderPlans();
+  }
+}
+
+// 能力测评
+let assessmentState = {
+  score: 0,
+  completed: false,
+  targets: {}
+};
+
+function startAssessment(force = false) {
+  const data = getUserData();
+  if (!data.assessmentCompleted || force) {
+    const modal = document.getElementById("assessModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      document.getElementById("stage1").classList.remove("hidden");
+      document.getElementById("stage4").classList.add("hidden");
+      // 重置步骤
+      document.querySelectorAll(".step-item").forEach((item, idx) => {
+        item.classList.toggle("active", idx === 0);
+      });
+    }
+  }
+}
+
+function nextStage(stage, isCorrect) {
+  if (stage === 2) {
+    assessmentState.score = isCorrect ? 6.0 : 3.5;
+    document.getElementById("stage1").classList.add("hidden");
+    document.getElementById("stage4").classList.remove("hidden");
+    // 更新步骤
+    document.querySelectorAll(".step-item").forEach((item, idx) => {
+      item.classList.toggle("active", idx === 3);
+    });
+  }
+}
+
+function finishAssessment() {
+  const goalL = parseFloat(document.getElementById("goalL")?.value || 7.0);
+  const goalR = parseFloat(document.getElementById("goalR")?.value || 7.5);
+  const goalW = parseFloat(document.getElementById("goalW")?.value || 6.5);
+  const goalS = parseFloat(document.getElementById("goalS")?.value || 6.5);
+  
+  assessmentState.targets = { l: goalL, r: goalR, w: goalW, s: goalS };
+  assessmentState.completed = true;
+  
+  const data = getUserData();
+  data.reading = goalR;
+  data.listening = goalL;
+  data.writing = goalW;
+  data.speaking = goalS;
+  data.assessmentCompleted = true;
+  data.assessmentScore = assessmentState.score;
+  
+  const avg = (goalL + goalR + goalW + goalS) / 4;
+  data.targetAvg = avg;
+  saveUserData(data);
+  
+  updateTargetAverage();
+  closeAssessment();
+  
+  if (assessmentState.score < 4) {
+    alert("温馨提示：您的基础分较低，专项训练已锁定。\n\n建议先去【单词学习】板块积累核心词汇哦~ (ง •_•)ง");
+    showPage("vocab");
+  } else {
+    alert("测评完成！已为你生成 i+1 专属训练计划。");
+  }
+}
+
+function closeAssessment() {
+  const modal = document.getElementById("assessModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
 // 初始化
 function bootstrap() {
   updateDailyQuote();
@@ -827,6 +953,13 @@ function bootstrap() {
   updateExamCountdown();
   updateVocabProgress();
   renderChart();
+  renderPlans();
+  
+  // 检查是否需要显示测评
+  const data = getUserData();
+  if (!data.assessmentCompleted) {
+    setTimeout(() => startAssessment(), 500);
+  }
   
   bindNav();
   bindChartTabs();
@@ -860,11 +993,13 @@ function bootstrap() {
     });
   }
   
-  // 进入庄园按钮
-  const ctaEnter = document.getElementById("ctaEnter");
-  if (ctaEnter) {
-    ctaEnter.addEventListener("click", () => {
-      alert("欢迎进入你的学习庄园！继续努力吧~ 🌱");
+  // 今日计划输入框回车事件
+  const planInput = document.getElementById("planInput");
+  if (planInput) {
+    planInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        addPlan();
+      }
     });
   }
   
@@ -878,6 +1013,115 @@ function bootstrap() {
   
   // 初始化单词书
   renderWordBook();
+  
+  // 全局查词功能
+  initGlobalWordLookup();
+}
+
+// 全局查词功能
+function initGlobalWordLookup() {
+  // 处理阅读内容中的单词点击
+  document.body.addEventListener("click", (e) => {
+    const popover = document.getElementById("dictPopover");
+    if (!popover) return;
+    
+    // 如果点击的是单词
+    if (e.target.tagName === "SPAN" && e.target.closest(".interactive-text")) {
+      const word = e.target.innerText.replace(/[^a-zA-Z]/g, "");
+      if (word.length > 2) {
+        showWordDict(word, e.pageX, e.pageY, e.target);
+      }
+    } else if (!e.target.closest("#dictPopover")) {
+      // 点击其他地方隐藏弹窗
+      popover.style.display = "none";
+    }
+  });
+  
+  // 处理阅读内容的单词高亮
+  const readingContent = document.querySelector(".reading-content");
+  if (readingContent) {
+    processInteractiveText(readingContent);
+  }
+}
+
+function processInteractiveText(container) {
+  if (!container) return;
+  const text = container.innerHTML;
+  // 简单处理：将单词用span包裹
+  const processed = text.replace(/\b([a-zA-Z]{3,})\b/g, '<span>$1</span>');
+  container.innerHTML = processed;
+}
+
+function showWordDict(word, x, y, el) {
+  const popover = document.getElementById("dictPopover");
+  if (!popover) return;
+  
+  const cleanWord = word.toLowerCase();
+  
+  // 高亮单词
+  el.classList.add("highlight-word");
+  
+  // 检查是否已在生词本
+  const vocabData = getVocabData();
+  const existing = vocabData.notebook.find(w => w.word === cleanWord);
+  
+  // 更新点击次数
+  if (existing) {
+    existing.clickCount = (existing.clickCount || 0) + 1;
+    existing.lastClickDate = new Date().toISOString();
+  } else {
+    vocabData.notebook.push({
+      word: cleanWord,
+      meaning: "",
+      category: "",
+      frequency: "",
+      clickCount: 1,
+      addedDate: new Date().toISOString(),
+      lastClickDate: new Date().toISOString(),
+      learnedDate: null,
+      lastReviewDate: null,
+      reviewLevel: 0
+    });
+  }
+  saveVocabData(vocabData);
+  
+  // 显示弹窗
+  popover.style.left = Math.min(x, window.innerWidth - 320) + "px";
+  popover.style.top = (y + 20) + "px";
+  popover.style.display = "block";
+  
+  // 更新弹窗内容
+  document.getElementById("popWord").textContent = cleanWord;
+  document.getElementById("popPhonetic").textContent = "/" + cleanWord + "/";
+  document.getElementById("popDef").textContent = "正在查询有道词典...";
+  document.getElementById("popMeta").innerHTML = `
+    <span>查询: ${existing ? existing.clickCount : 1}次</span>
+    <span style="color: #22c55e; font-weight: 700;">✓ 已自动收录</span>
+  `;
+  
+  // 模拟API查询
+  setTimeout(() => {
+    // 尝试从单词书查找
+    const wordBook = ieltsWordBook.find(w => w.word.toLowerCase() === cleanWord);
+    if (wordBook) {
+      document.getElementById("popDef").textContent = `中文：${wordBook.meaning}\n主题：${getCategoryName(wordBook.category)}\n频率：${wordBook.frequency}`;
+    } else {
+      document.getElementById("popDef").textContent = `v. [模拟释义] 点击查词成功\n\n示例：This measure will help to ${cleanWord} the problem.`;
+    }
+  }, 500);
+  
+  // 加入生词本按钮
+  const addBtn = document.getElementById("popAddBtn");
+  if (addBtn) {
+    addBtn.onclick = () => {
+      if (existing) {
+        alert(`"${cleanWord}" 已在生词本中！`);
+      } else {
+        alert(`"${cleanWord}" 已加入生词本！`);
+      }
+      popover.style.display = "none";
+    };
+  }
 }
 
 // 页面加载完成后初始化
