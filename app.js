@@ -135,7 +135,15 @@ function getUserData() {
     vocabTarget: 30,
     vocabRatio: { new: 1, review: 2 },
     userName: "",
-    userAvatar: null
+    userAvatar: null,
+    // 全局设置
+    settings: {
+      accent: "us", // uk/us
+      voice: "male", // male/female
+      speed: 1.0, // 0.5-2.0
+      fontSize: "medium", // small/medium/large
+      theme: "light" // light/dark
+    }
   };
 }
 
@@ -1265,6 +1273,7 @@ async function searchWord(query) {
   }
   
   resultEl.innerHTML = "<div class='loading'>查询中...</div>";
+  resultEl.classList.remove("wordsearch-placeholder");
   
   const cleanQuery = query.trim().toLowerCase();
   
@@ -1330,6 +1339,9 @@ async function searchWord(query) {
       `;
       
       resultEl.innerHTML = html;
+      
+      // 清除占位符样式
+      resultEl.classList.remove("wordsearch-placeholder");
     } else {
       throw new Error("No results");
     }
@@ -1365,6 +1377,7 @@ async function searchWord(query) {
             </div>
           </div>
         `;
+        resultEl.classList.remove("wordsearch-placeholder");
       }
     } catch (fallbackError) {
       resultEl.innerHTML = `
@@ -1374,22 +1387,49 @@ async function searchWord(query) {
           </div>
         </div>
       `;
+      resultEl.classList.remove("wordsearch-placeholder");
     }
   }
 }
 
-// 播放单词发音（模拟）
-function playWordSound(word) {
-  // 这里可以集成真实的TTS API
-  console.log("播放发音:", word);
-  // 可以使用 Web Speech API
+// 播放单词发音（使用全局设置）
+function playWordSound(word, text) {
+  const wordToSpeak = text || word;
+  const userData = getUserData();
+  const settings = userData.settings || {};
+  
   if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
+    const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+    
+    // 设置口音
+    utterance.lang = settings.accent === "uk" ? 'en-GB' : 'en-US';
+    
+    // 设置倍速
+    utterance.rate = settings.speed || 1.0;
+    
+    // 设置音色（通过选择不同的voice）
+    const voices = speechSynthesis.getVoices();
+    const targetVoice = voices.find(voice => {
+      const langMatch = settings.accent === "uk" ? voice.lang.includes('GB') : voice.lang.includes('US');
+      const genderMatch = settings.voice === "female" ? voice.name.includes('Female') || voice.name.includes('female') : !voice.name.includes('Female');
+      return langMatch && genderMatch;
+    });
+    
+    if (targetVoice) {
+      utterance.voice = targetVoice;
+    }
+    
     speechSynthesis.speak(utterance);
   } else {
-    alert(`播放发音: ${word}`);
+    alert(`播放发音: ${wordToSpeak} (${settings.accent === "uk" ? "英音" : "美音"}, ${settings.voice === "female" ? "女声" : "男声"}, ${settings.speed}x倍速)`);
   }
+}
+
+// 加载语音列表（需要用户交互后）
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => {
+    // 语音列表已加载
+  };
 }
 
 function bindWordSearch() {
@@ -1419,7 +1459,172 @@ function bindWordSearch() {
 // ==================== 真题模拟模块 ====================
 
 // 真题数据（模拟数据，后续可接入真实数据源）
+// 支持剑雅4-20的数据结构
 const mockTests = {
+  // 剑雅系列（按版本号）
+  "剑雅4": {
+    "listening": [
+      { id: "cambridge-4-listening-1", title: "剑雅4 听力 Test 1", type: "listening", participants: 0, month: "剑雅4", version: "4" },
+      { id: "cambridge-4-listening-2", title: "剑雅4 听力 Test 2", type: "listening", participants: 0, month: "剑雅4", version: "4" }
+    ],
+    "reading": [
+      { id: "cambridge-4-reading-1", title: "剑雅4 阅读 Test 1", type: "reading", participants: 0, month: "剑雅4", version: "4" }
+    ],
+    "writing": [
+      { id: "cambridge-4-writing-1", title: "剑雅4 写作 Test 1", type: "writing", participants: 0, month: "剑雅4", version: "4" }
+    ],
+    "speaking": [
+      { id: "cambridge-4-speaking-1", title: "剑雅4 口语 Test 1", type: "speaking", participants: 0, month: "剑雅4", version: "4" }
+    ],
+    "comprehensive": [
+      { id: "cambridge-4-comprehensive-1", title: "剑雅4 完整模拟 Test 1", type: "comprehensive", participants: 0, month: "剑雅4", version: "4" }
+    ]
+  },
+  "剑雅5": {
+    "listening": [
+      { id: "cambridge-5-listening-1", title: "剑雅5 听力 Test 1", type: "listening", participants: 0, month: "剑雅5", version: "5" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅6": {
+    "listening": [
+      { id: "cambridge-6-listening-1", title: "剑雅6 听力 Test 1", type: "listening", participants: 0, month: "剑雅6", version: "6" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅7": {
+    "listening": [
+      { id: "cambridge-7-listening-1", title: "剑雅7 听力 Test 1", type: "listening", participants: 0, month: "剑雅7", version: "7" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅8": {
+    "listening": [
+      { id: "cambridge-8-listening-1", title: "剑雅8 听力 Test 1", type: "listening", participants: 0, month: "剑雅8", version: "8" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅9": {
+    "listening": [
+      { id: "cambridge-9-listening-1", title: "剑雅9 听力 Test 1", type: "listening", participants: 0, month: "剑雅9", version: "9" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅10": {
+    "listening": [
+      { id: "cambridge-10-listening-1", title: "剑雅10 听力 Test 1", type: "listening", participants: 0, month: "剑雅10", version: "10" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅11": {
+    "listening": [
+      { id: "cambridge-11-listening-1", title: "剑雅11 听力 Test 1", type: "listening", participants: 0, month: "剑雅11", version: "11" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅12": {
+    "listening": [
+      { id: "cambridge-12-listening-1", title: "剑雅12 听力 Test 1", type: "listening", participants: 0, month: "剑雅12", version: "12" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅13": {
+    "listening": [
+      { id: "cambridge-13-listening-1", title: "剑雅13 听力 Test 1", type: "listening", participants: 0, month: "剑雅13", version: "13" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅14": {
+    "listening": [
+      { id: "cambridge-14-listening-1", title: "剑雅14 听力 Test 1", type: "listening", participants: 0, month: "剑雅14", version: "14" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅15": {
+    "listening": [
+      { id: "cambridge-15-listening-1", title: "剑雅15 听力 Test 1", type: "listening", participants: 0, month: "剑雅15", version: "15" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅16": {
+    "listening": [
+      { id: "cambridge-16-listening-1", title: "剑雅16 听力 Test 1", type: "listening", participants: 0, month: "剑雅16", version: "16" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅17": {
+    "listening": [
+      { id: "cambridge-17-listening-1", title: "剑雅17 听力 Test 1", type: "listening", participants: 0, month: "剑雅17", version: "17" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅18": {
+    "listening": [
+      { id: "cambridge-18-listening-1", title: "剑雅18 听力 Test 1", type: "listening", participants: 0, month: "剑雅18", version: "18" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅19": {
+    "listening": [
+      { id: "cambridge-19-listening-1", title: "剑雅19 听力 Test 1", type: "listening", participants: 0, month: "剑雅19", version: "19" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  "剑雅20": {
+    "listening": [
+      { id: "cambridge-20-listening-1", title: "剑雅20 听力 Test 1", type: "listening", participants: 0, month: "剑雅20", version: "20" }
+    ],
+    "reading": [],
+    "writing": [],
+    "speaking": [],
+    "comprehensive": []
+  },
+  // 按年份的真题（2025, 2024等）
   "2025": {
     "comprehensive": [
       { id: "2025-01-comprehensive", title: "雅思真题试卷 一月", type: "comprehensive", participants: 1812096, month: "一月" },
@@ -1495,21 +1700,61 @@ let mockState = {
 
 // 初始化真题模块
 function initMockTests() {
+  loadMockTests(); // 加载保存的数据
   renderYearButtons();
   renderMockList();
   bindMockFilters();
 }
 
-// 渲染年份按钮
+// 渲染年份按钮（包括剑雅系列）
 function renderYearButtons() {
   const container = document.getElementById("yearButtons");
   if (!container) return;
   
-  const years = Object.keys(mockTests).sort((a, b) => b - a);
-  container.innerHTML = years.map(year => `
-    <button class="year-btn ${year === mockState.currentYear ? "active" : ""}" 
-            data-year="${year}">${year}</button>
-  `).join("");
+  // 分离剑雅系列和年份
+  const jianyaVersions = [];
+  const years = [];
+  
+  Object.keys(mockTests).forEach(key => {
+    if (key.startsWith("剑雅")) {
+      jianyaVersions.push(key);
+    } else {
+      years.push(key);
+    }
+  });
+  
+  // 排序：剑雅按版本号，年份按数字
+  jianyaVersions.sort((a, b) => {
+    const numA = parseInt(a.replace("剑雅", ""));
+    const numB = parseInt(b.replace("剑雅", ""));
+    return numB - numA; // 从高到低
+  });
+  
+  years.sort((a, b) => b - a);
+  
+  let html = "";
+  
+  // 先显示年份
+  if (years.length > 0) {
+    html += '<div class="year-group"><span class="year-group-label">年份:</span>';
+    html += years.map(year => `
+      <button class="year-btn ${year === mockState.currentYear ? "active" : ""}" 
+              data-year="${year}">${year}</button>
+    `).join("");
+    html += '</div>';
+  }
+  
+  // 再显示剑雅系列
+  if (jianyaVersions.length > 0) {
+    html += '<div class="year-group"><span class="year-group-label">剑雅:</span>';
+    html += jianyaVersions.map(version => `
+      <button class="year-btn ${version === mockState.currentYear ? "active" : ""}" 
+              data-year="${version}">${version}</button>
+    `).join("");
+    html += '</div>';
+  }
+  
+  container.innerHTML = html;
 }
 
 // 渲染题目列表
