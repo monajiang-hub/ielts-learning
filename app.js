@@ -102,6 +102,13 @@ function showPage(pageId) {
           initMockTests();
         }, 100);
       }
+      
+      // 如果是设置页面，初始化
+      if (pageId === "settings") {
+        setTimeout(() => {
+          initGlobalSettings();
+        }, 100);
+      }
     }
   }
   
@@ -2423,6 +2430,334 @@ function showWordDict(word, x, y, el) {
       }
       popover.style.display = "none";
     };
+  }
+}
+
+// ==================== 全局设置功能 ====================
+
+function initGlobalSettings() {
+  const userData = getUserData();
+  const settings = userData.settings || {};
+  
+  // 加载设置到界面
+  loadSettingsToUI(settings);
+  
+  // 绑定设置事件
+  bindSettingsEvents();
+  
+  // 应用主题和字体大小
+  applyTheme(settings.theme || "light");
+  applyFontSize(settings.fontSize || "medium");
+}
+
+function loadSettingsToUI(settings) {
+  // 口音
+  const accentUK = document.getElementById("accentUK");
+  const accentUS = document.getElementById("accentUS");
+  if (accentUK && accentUS) {
+    if (settings.accent === "uk") {
+      accentUK.classList.add("active");
+      accentUS.classList.remove("active");
+    } else {
+      accentUS.classList.add("active");
+      accentUK.classList.remove("active");
+    }
+  }
+  
+  // 音色
+  const voiceMale = document.getElementById("voiceMale");
+  const voiceFemale = document.getElementById("voiceFemale");
+  if (voiceMale && voiceFemale) {
+    if (settings.voice === "female") {
+      voiceFemale.classList.add("active");
+      voiceMale.classList.remove("active");
+    } else {
+      voiceMale.classList.add("active");
+      voiceFemale.classList.remove("active");
+    }
+  }
+  
+  // 倍速
+  const speedSlider = document.getElementById("speedSlider");
+  const speedValue = document.getElementById("speedValue");
+  if (speedSlider && speedValue) {
+    speedSlider.value = settings.speed || 1.0;
+    updateSpeedDisplay(settings.speed || 1.0);
+  }
+  
+  // 字体大小
+  document.querySelectorAll("[data-setting='fontSize']").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.value === (settings.fontSize || "medium"));
+  });
+  
+  // 主题
+  const themeLight = document.getElementById("themeLight");
+  const themeDark = document.getElementById("themeDark");
+  if (themeLight && themeDark) {
+    if (settings.theme === "dark") {
+      themeDark.classList.add("active");
+      themeLight.classList.remove("active");
+    } else {
+      themeLight.classList.add("active");
+      themeDark.classList.remove("active");
+    }
+  }
+}
+
+function bindSettingsEvents() {
+  // 使用事件委托，避免重复绑定
+  const settingsContainer = document.getElementById("settings");
+  if (!settingsContainer) return;
+  
+  // 移除旧的事件监听器
+  settingsContainer.removeEventListener("click", handleSettingsClick);
+  
+  // 添加新的事件监听器
+  settingsContainer.addEventListener("click", handleSettingsClick);
+}
+
+function handleSettingsClick(e) {
+  const btn = e.target.closest("[data-setting]");
+  if (!btn) return;
+  
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const setting = btn.dataset.setting;
+  const value = btn.dataset.value;
+  
+  if (!setting || !value) return;
+  
+  // 更新按钮状态
+  document.querySelectorAll(`[data-setting='${setting}']`).forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  
+  // 立即应用设置
+  if (setting === "theme") {
+    applyTheme(value);
+  } else if (setting === "fontSize") {
+    applyFontSize(value);
+  }
+  
+  // 自动保存
+  saveGlobalSettings();
+}
+
+function bindSettingsEvents() {
+  // 使用事件委托，避免重复绑定
+  const settingsContainer = document.getElementById("settings");
+  if (!settingsContainer) return;
+  
+  // 移除旧的事件监听器
+  settingsContainer.removeEventListener("click", handleSettingsClick);
+  
+  // 添加新的事件监听器
+  settingsContainer.addEventListener("click", handleSettingsClick);
+  
+  // 倍速滑块
+  const speedSlider = document.getElementById("speedSlider");
+  if (speedSlider) {
+    speedSlider.removeEventListener("input", handleSpeedChange);
+    speedSlider.addEventListener("input", handleSpeedChange);
+  }
+  
+  // 文件导入
+  const importFile = document.getElementById("importTestFile");
+  if (importFile) {
+    importFile.removeEventListener("change", handleFileImport);
+    importFile.addEventListener("change", handleFileImport);
+  }
+}
+
+function handleSpeedChange(e) {
+  const value = parseFloat(e.target.value);
+  updateSpeedDisplay(value);
+  // 实时保存
+  const userData = getUserData();
+  if (!userData.settings) userData.settings = {};
+  userData.settings.speed = value;
+  saveUserData(userData);
+}
+
+function handleFileImport(e) {
+  const file = e.target.files[0];
+  if (file) {
+    importTestData(file);
+  }
+}
+
+function updateSpeedDisplay(value) {
+  const speedValue = document.getElementById("speedValue");
+  if (speedValue) {
+    speedValue.textContent = value.toFixed(1) + "x";
+    
+    // 更新提示
+    const hint = speedValue.nextElementSibling;
+    if (hint) {
+      if (value === 1.0) {
+        hint.textContent = "(标准)";
+      } else if (value < 1.0) {
+        hint.textContent = "(慢速)";
+      } else {
+        hint.textContent = "(快速)";
+      }
+    }
+  }
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle("dark-theme", theme === "dark");
+  document.body.classList.toggle("light-theme", theme === "light");
+}
+
+function applyFontSize(size) {
+  const sizes = {
+    small: "14px",
+    medium: "16px",
+    large: "18px"
+  };
+  
+  document.documentElement.style.setProperty("--base-font-size", sizes[size] || sizes.medium);
+  
+  // 应用到主要内容区域
+  const mainContent = document.querySelector(".main");
+  if (mainContent) {
+    mainContent.style.fontSize = sizes[size] || sizes.medium;
+  }
+}
+
+function saveGlobalSettings() {
+  const userData = getUserData();
+  
+  // 获取当前设置
+  const accent = document.querySelector("[data-setting='accent'].active")?.dataset.value || "us";
+  const voice = document.querySelector("[data-setting='voice'].active")?.dataset.value || "male";
+  const speed = parseFloat(document.getElementById("speedSlider")?.value || 1.0);
+  const fontSize = document.querySelector("[data-setting='fontSize'].active")?.dataset.value || "medium";
+  const theme = document.querySelector("[data-setting='theme'].active")?.dataset.value || "light";
+  
+  userData.settings = {
+    accent,
+    voice,
+    speed,
+    fontSize,
+    theme
+  };
+  
+  saveUserData(userData);
+  applyTheme(theme);
+  applyFontSize(fontSize);
+}
+
+function resetSettings() {
+  if (confirm("确定要恢复默认设置吗？")) {
+    const userData = getUserData();
+    userData.settings = {
+      accent: "us",
+      voice: "male",
+      speed: 1.0,
+      fontSize: "medium",
+      theme: "light"
+    };
+    saveUserData(userData);
+    loadSettingsToUI(userData.settings);
+    applyTheme("light");
+    applyFontSize("medium");
+    alert("已恢复默认设置！");
+  }
+}
+
+// 导入真题数据
+function importTestData(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      // 验证数据格式
+      if (validateTestData(data)) {
+        // 合并到现有数据
+        mergeTestData(data);
+        alert("数据导入成功！");
+        // 刷新真题列表
+        if (document.getElementById("mock").classList.contains("active")) {
+          initMockTests();
+        }
+      } else {
+        alert("数据格式不正确，请检查文件格式！");
+      }
+    } catch (error) {
+      alert("文件读取失败：" + error.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function validateTestData(data) {
+  // 简单验证：检查是否有年份和题型
+  return data && typeof data === "object" && Object.keys(data).length > 0;
+}
+
+function mergeTestData(newData) {
+  // 合并新数据到 mockTests
+  for (const year in newData) {
+    if (!mockTests[year]) {
+      mockTests[year] = {};
+    }
+    for (const type in newData[year]) {
+      if (!mockTests[year][type]) {
+        mockTests[year][type] = [];
+      }
+      mockTests[year][type] = [...mockTests[year][type], ...newData[year][type]];
+    }
+  }
+  
+  // 保存到 localStorage
+  localStorage.setItem("ieltsMockTests", JSON.stringify(mockTests));
+}
+
+function downloadTestTemplate() {
+  const template = {
+    "剑雅4": {
+      "listening": [
+        {
+          "id": "cambridge-4-listening-1",
+          "title": "剑雅4 听力 Test 1",
+          "type": "listening",
+          "participants": 0,
+          "month": "剑雅4",
+          "version": "4"
+        }
+      ],
+      "reading": [],
+      "writing": [],
+      "speaking": [],
+      "comprehensive": []
+    }
+  };
+  
+  const blob = new Blob([JSON.stringify(template, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ielts-test-template.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert("模板已下载！请按照格式填写数据后导入。");
+}
+
+// 加载保存的真题数据
+function loadMockTests() {
+  const saved = localStorage.getItem("ieltsMockTests");
+  if (saved) {
+    try {
+      const savedData = JSON.parse(saved);
+      // 合并保存的数据
+      Object.assign(mockTests, savedData);
+    } catch (e) {
+      console.error("加载真题数据失败:", e);
+    }
   }
 }
 
