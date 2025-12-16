@@ -85,6 +85,23 @@ function showPage(pageId) {
       targetPage.classList.add("active");
       // 滚动到对应位置
       targetPage.scrollIntoView({ behavior: "smooth", block: "start" });
+      
+      // 如果是单词书页面，初始化
+      if (pageId === "wordbook") {
+        setTimeout(() => {
+          if (!wordbookState.initialized) {
+            initWordBook();
+            wordbookState.initialized = true;
+          }
+        }, 100);
+      }
+      
+      // 如果是真题演练页面，初始化
+      if (pageId === "mock") {
+        setTimeout(() => {
+          initMockTests();
+        }, 100);
+      }
     }
   }
   
@@ -116,7 +133,9 @@ function getUserData() {
     examDate: null,
     coins: 0,
     vocabTarget: 30,
-    vocabRatio: { new: 1, review: 2 }
+    vocabRatio: { new: 1, review: 2 },
+    userName: "",
+    userAvatar: null
   };
 }
 
@@ -279,17 +298,189 @@ function updateVocabProgress() {
   const reviewTargetEl = document.getElementById("wordReviewTarget");
   const ratioEl = document.getElementById("vocabRatioDisplay");
   
+  const vocabTarget = userData.vocabTarget || 30;
+  
   if (todayEl) todayEl.textContent = vocabData.learnedToday || 0;
-  if (targetEl) targetEl.textContent = userData.vocabTarget || 30;
+  if (targetEl) targetEl.textContent = vocabTarget;
   if (reviewEl) reviewEl.textContent = reviewInfo.count;
   if (reviewTargetEl) reviewTargetEl.textContent = getReviewTarget();
   if (ratioEl) ratioEl.textContent = `新词:复习 = ${ratio.new}:${ratio.review}`;
+}
+
+// 设置新词数量
+function showTargetModal() {
+  const modal = document.getElementById("targetModal");
+  const userData = getUserData();
+  const input = document.getElementById("newWordTargetInput");
+  if (modal && input) {
+    input.value = userData.vocabTarget || 30;
+    modal.classList.remove("hidden");
+  }
+}
+
+function closeTargetModal() {
+  const modal = document.getElementById("targetModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+function saveWordTarget() {
+  const input = document.getElementById("newWordTargetInput");
+  if (!input) return;
+  
+  const target = parseInt(input.value);
+  if (isNaN(target) || target < 1 || target > 200) {
+    alert("请输入1-200之间的数字！");
+    return;
+  }
+  
+  const userData = getUserData();
+  userData.vocabTarget = target;
+  saveUserData(userData);
+  
+  updateVocabProgress();
+  closeTargetModal();
+  alert(`每日新词目标已设置为 ${target} 个！`);
+}
+
+// 用户设置
+function showUserSettings() {
+  const modal = document.getElementById("userSettingsModal");
+  const userData = getUserData();
+  const nameInput = document.getElementById("userNameInput");
+  const previewText = document.getElementById("previewText");
+  const previewImage = document.getElementById("previewImage");
+  
+  if (modal && nameInput) {
+    nameInput.value = userData.userName || "";
+    
+    // 更新预览
+    if (userData.userAvatar) {
+      previewImage.src = userData.userAvatar;
+      previewImage.style.display = "block";
+      previewText.style.display = "none";
+    } else {
+      previewImage.style.display = "none";
+      previewText.style.display = "block";
+      previewText.textContent = (userData.userName || "U").charAt(0).toUpperCase();
+    }
+    
+    modal.classList.remove("hidden");
+  }
+}
+
+function closeUserSettings() {
+  const modal = document.getElementById("userSettingsModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+function useDefaultAvatar() {
+  const previewImage = document.getElementById("previewImage");
+  const previewText = document.getElementById("previewText");
+  const nameInput = document.getElementById("userNameInput");
+  
+  if (previewImage && previewText) {
+    previewImage.style.display = "none";
+    previewText.style.display = "block";
+    const userName = nameInput?.value || "U";
+    previewText.textContent = userName.charAt(0).toUpperCase();
+  }
+}
+
+function saveUserSettings() {
+  const nameInput = document.getElementById("userNameInput");
+  const userData = getUserData();
+  
+  if (nameInput) {
+    userData.userName = nameInput.value.trim() || "";
+  }
+  
+  // 保存头像（如果有上传）
+  const previewImage = document.getElementById("previewImage");
+  if (previewImage && previewImage.src && previewImage.style.display !== "none") {
+    userData.userAvatar = previewImage.src;
+  } else {
+    userData.userAvatar = null;
+  }
+  
+  saveUserData(userData);
+  updateUserAvatar();
+  closeUserSettings();
+  alert("设置已保存！");
+}
+
+function updateUserAvatar() {
+  const userData = getUserData();
+  const avatar = document.getElementById("userAvatar");
+  const avatarText = document.getElementById("avatarText");
+  const avatarImage = document.getElementById("avatarImage");
+  
+  if (!avatar) return;
+  
+  if (userData.userAvatar) {
+    if (avatarImage) {
+      avatarImage.src = userData.userAvatar;
+      avatarImage.style.display = "block";
+    }
+    if (avatarText) {
+      avatarText.style.display = "none";
+    }
+  } else {
+    if (avatarImage) {
+      avatarImage.style.display = "none";
+    }
+    if (avatarText) {
+      avatarText.style.display = "block";
+      avatarText.textContent = (userData.userName || "U").charAt(0).toUpperCase();
+    }
+  }
+}
+
+// 处理头像上传
+function initAvatarUpload() {
+  const fileInput = document.getElementById("avatarFileInput");
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith("image/")) {
+        alert("请选择图片文件！");
+        return;
+      }
+      
+      if (file.size > 2 * 1024 * 1024) {
+        alert("图片大小不能超过2MB！");
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const previewImage = document.getElementById("previewImage");
+        const previewText = document.getElementById("previewText");
+        if (previewImage && previewText) {
+          previewImage.src = event.target.result;
+          previewImage.style.display = "block";
+          previewText.style.display = "none";
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 }
 
 // 设置词汇比例
 function bindVocabRatio() {
   const btnSetRatio = document.getElementById("btnSetRatio");
   const btnSetVocabRatio = document.getElementById("btnSetVocabRatio");
+  const btnSetTarget = document.getElementById("btnSetTarget");
+  
+  if (btnSetTarget) {
+    btnSetTarget.addEventListener("click", showTargetModal);
+  }
   
   const showRatioDialog = () => {
     const userData = getUserData();
@@ -580,64 +771,444 @@ function bindTimers() {
 }
 
 // 雅思单词书数据
-const ieltsWordBook = [
-  { word: "earthquake", meaning: "地震", category: "geography", frequency: "高频" },
-  { word: "tsunami", meaning: "海啸", category: "geography", frequency: "中频" },
-  { word: "volcano", meaning: "火山", category: "geography", frequency: "高频" },
-  { word: "climate", meaning: "气候", category: "nature", frequency: "高频" },
-  { word: "ecosystem", meaning: "生态系统", category: "nature", frequency: "中频" },
-  { word: "biodiversity", meaning: "生物多样性", category: "nature", frequency: "中频" },
-  { word: "curriculum", meaning: "课程", category: "education", frequency: "高频" },
-  { word: "syllabus", meaning: "教学大纲", category: "education", frequency: "中频" },
-  { word: "innovation", meaning: "创新", category: "technology", frequency: "高频" },
-  { word: "artificial intelligence", meaning: "人工智能", category: "technology", frequency: "高频" },
-  { word: "heritage", meaning: "遗产", category: "culture", frequency: "中频" },
-  { word: "entrepreneur", meaning: "企业家", category: "business", frequency: "高频" }
+// 场景分类
+const wordScenarios = [
+  "不限", "听力高频词", "自然地理", "植物研究", "动物保护", "太空探索",
+  "学校教育", "科技发明", "文化历史", "语言演化", "娱乐运动", "物品材料",
+  "时尚潮流", "饮食健康", "建筑场所", "交通旅行", "国家政府", "社会经济",
+  "法律法规", "征战沙场", "社会关系", "行为动作", "身心健康", "时间日期", "雅思词汇"
 ];
 
-// 渲染单词书
-let wordbookCurrentPage = 1;
-const wordbookPageSize = 10;
+// 扩展单词数据结构
+const ieltsWordBook = [
+  { 
+    word: "diet", 
+    phonetic: "/daıət/",
+    pos: "名词",
+    meaning: "日常饮食; 节食", 
+    category: "饮食健康", 
+    frequency: "高频",
+    collocation: "balanced diet",
+    collocationMeaning: "均衡饮食",
+    example: "She is on a strict diet to lose weight.",
+    exampleMeaning: "她正在严格节食以减肥。"
+  },
+  { 
+    word: "dietary", 
+    phonetic: "/ˈdaɪəteri/",
+    pos: "形容词",
+    meaning: "饮食的", 
+    category: "饮食健康", 
+    frequency: "中频",
+    collocation: "dietary restrictions",
+    collocationMeaning: "饮食限制",
+    example: "Dietary concerns are important for health.",
+    exampleMeaning: "饮食问题对健康很重要。"
+  },
+  { 
+    word: "appetite", 
+    phonetic: "/ˈæpɪtaɪt/",
+    pos: "名词",
+    meaning: "食欲; 强烈欲望", 
+    category: "饮食健康", 
+    frequency: "高频",
+    collocation: "lose appetite",
+    collocationMeaning: "食欲减退",
+    example: "He has a big appetite after working out.",
+    exampleMeaning: "运动后他的食欲很大。"
+  },
+  { 
+    word: "provision", 
+    phonetic: "/prə'vızən/",
+    pos: "名词",
+    meaning: "供应; 预备; 食物供应", 
+    category: "饮食健康", 
+    frequency: "中频",
+    collocation: "food provision",
+    collocationMeaning: "食物供应",
+    example: "They made provisions for the winter season.",
+    exampleMeaning: "他们为冬季做好了准备。"
+  },
+  { 
+    word: "edible", 
+    phonetic: "/'ɛdıbəl/",
+    pos: "形容词",
+    meaning: "可吃的; 可以食用的", 
+    category: "饮食健康", 
+    frequency: "中频",
+    collocation: "edible plants",
+    collocationMeaning: "可食植物",
+    example: "Most mushrooms are edible, but some are toxic.",
+    exampleMeaning: "大多数蘑菇是可吃的, 但有些是有毒的。"
+  },
+  { 
+    word: "recipe", 
+    phonetic: "/'rɛsıpi/",
+    pos: "名词",
+    meaning: "食谱; 秘方", 
+    category: "饮食健康", 
+    frequency: "高频",
+    collocation: "follow a recipe",
+    collocationMeaning: "遵循食谱",
+    example: "I need a recipe for chocolate cake.",
+    exampleMeaning: "我需要一个巧克力蛋糕的食谱。"
+  },
+  { 
+    word: "earthquake", 
+    phonetic: "/'ɜːθkweɪk/",
+    pos: "名词",
+    meaning: "地震", 
+    category: "自然地理", 
+    frequency: "高频",
+    collocation: "earthquake zone",
+    collocationMeaning: "地震带",
+    example: "The earthquake caused widespread damage.",
+    exampleMeaning: "地震造成了广泛的破坏。"
+  },
+  { 
+    word: "climate", 
+    phonetic: "/'klaɪmɪt/",
+    pos: "名词",
+    meaning: "气候", 
+    category: "自然地理", 
+    frequency: "高频",
+    collocation: "climate change",
+    collocationMeaning: "气候变化",
+    example: "Climate change is a global concern.",
+    exampleMeaning: "气候变化是全球关注的问题。"
+  },
+  { 
+    word: "curriculum", 
+    phonetic: "/kə'rɪkjʊləm/",
+    pos: "名词",
+    meaning: "课程", 
+    category: "学校教育", 
+    frequency: "高频",
+    collocation: "school curriculum",
+    collocationMeaning: "学校课程",
+    example: "The curriculum includes mathematics and science.",
+    exampleMeaning: "课程包括数学和科学。"
+  },
+  { 
+    word: "innovation", 
+    phonetic: "/ˌɪnə'veɪʃən/",
+    pos: "名词",
+    meaning: "创新", 
+    category: "科技发明", 
+    frequency: "高频",
+    collocation: "technological innovation",
+    collocationMeaning: "技术创新",
+    example: "Innovation drives economic growth.",
+    exampleMeaning: "创新推动经济增长。"
+  }
+];
 
-function renderWordBook() {
-  const listEl = document.getElementById("wordbookList");
-  const paginationEl = document.getElementById("wordbookPagination");
-  if (!listEl) return;
+// 单词书状态管理
+let wordbookState = {
+  currentTopic: "true-scripture",
+  currentScenario: "不限",
+  currentStatus: "all",
+  currentMode: "list",
+  selectedWord: null,
+  wordStatuses: {}, // {word: "known"|"unknown"|"vague"|null}
+  initialized: false
+};
+
+// 初始化单词书
+function initWordBook() {
+  // 渲染场景按钮
+  renderScenarioButtons();
+  // 渲染单词卡片
+  renderWordBookGrid();
+  // 绑定筛选事件
+  bindWordBookFilters();
+}
+
+// 渲染场景按钮
+function renderScenarioButtons() {
+  const container = document.getElementById("scenarioButtons");
+  if (!container) return;
   
-  const searchTerm = document.getElementById("wordbookSearch")?.value.toLowerCase() || "";
-  const category = document.getElementById("wordbookCategory")?.value || "";
+  container.innerHTML = wordScenarios.map(scenario => `
+    <button class="filter-btn ${scenario === wordbookState.currentScenario ? "active" : ""}" 
+            data-scenario="${scenario}">${scenario}</button>
+  `).join("");
+}
+
+// 渲染单词卡片网格
+function renderWordBookGrid() {
+  const grid = document.getElementById("wordbookGrid");
+  if (!grid) return;
   
+  // 筛选单词
   let filtered = ieltsWordBook.filter(word => {
-    const matchSearch = !searchTerm || word.word.toLowerCase().includes(searchTerm) || word.meaning.includes(searchTerm);
-    const matchCategory = !category || word.category === category;
-    return matchSearch && matchCategory;
+    // 场景筛选
+    if (wordbookState.currentScenario !== "不限" && word.category !== wordbookState.currentScenario) {
+      return false;
+    }
+    // 状态筛选
+    if (wordbookState.currentStatus !== "all") {
+      const status = wordbookState.wordStatuses[word.word];
+      if (wordbookState.currentStatus === "unlabeled" && status) return false;
+      if (wordbookState.currentStatus !== "unlabeled" && status !== wordbookState.currentStatus) return false;
+    }
+    return true;
   });
   
-  const totalPages = Math.ceil(filtered.length / wordbookPageSize);
-  const start = (wordbookCurrentPage - 1) * wordbookPageSize;
-  const end = start + wordbookPageSize;
-  const pageData = filtered.slice(start, end);
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">暂无单词，请选择其他筛选条件</div>';
+    return;
+  }
   
-  listEl.innerHTML = pageData.map(word => `
-    <div class="wordbook-item">
-      <div class="wordbook-word">
-        <strong>${word.word}</strong>
-        <span class="pill ${word.category === "geography" ? "blue" : word.category === "nature" ? "green" : word.category === "education" ? "purple" : word.category === "technology" ? "orange" : word.category === "culture" ? "red" : "blue"}">${word.frequency}</span>
+  grid.innerHTML = filtered.map(word => {
+    const status = wordbookState.wordStatuses[word.word] || "unlabeled";
+    const statusClass = status === "known" ? "known" : status === "unknown" ? "unknown" : status === "vague" ? "vague" : "";
+    
+    return `
+      <div class="word-card ${statusClass}" data-word="${word.word}">
+        <div class="word-card-header">
+          <div class="word-main">
+            <h3 class="word-title">${word.word}</h3>
+            <span class="word-phonetic">${word.phonetic || "/phonetic/"}</span>
+          </div>
+          <div class="word-card-actions">
+            <button class="icon-btn sound-btn" onclick="playSound('${word.word}')">🔊</button>
+            <button class="icon-btn hide-btn" onclick="hideWord('${word.word}')">👁️</button>
+          </div>
+        </div>
+        <div class="word-card-body">
+          <div class="word-pos">${word.pos || "n."}</div>
+          <div class="word-meaning">${word.meaning}</div>
+          ${word.collocation ? `
+            <div class="word-collocation">
+              <div class="collocation-header">
+                <span>搭配</span>
+                <button class="icon-btn sound-btn" onclick="playSound('${word.collocation}')">🔊</button>
+              </div>
+              <div class="collocation-text">${word.collocation}</div>
+              <div class="collocation-meaning">${word.collocationMeaning}</div>
+            </div>
+          ` : ""}
+          ${word.example ? `
+            <div class="word-example">
+              <div class="example-header">
+                <span>例句</span>
+                <button class="icon-btn sound-btn" onclick="playSound('${word.example}')">🔊</button>
+              </div>
+              <div class="example-text">${word.example}</div>
+              <div class="example-meaning">${word.exampleMeaning}</div>
+            </div>
+          ` : ""}
+        </div>
+        <div class="word-card-footer">
+          <span class="word-status-badge ${statusClass}">${getStatusLabel(status)}</span>
+        </div>
       </div>
-      <div class="wordbook-meaning">
-        <div><strong>中文：</strong>${word.meaning}</div>
-        <div><strong>主题：</strong>${getCategoryName(word.category)}</div>
+    `;
+  }).join("");
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    "known": "认识",
+    "unknown": "不认识",
+    "vague": "模糊",
+    "unlabeled": "未标注"
+  };
+  return labels[status] || "未标注";
+}
+
+// 绑定筛选事件
+function bindWordBookFilters() {
+  // 主题筛选
+  document.querySelectorAll("[data-topic]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-topic]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      wordbookState.currentTopic = btn.dataset.topic;
+      renderWordBookGrid();
+    });
+  });
+  
+  // 场景筛选
+  document.addEventListener("click", (e) => {
+    if (e.target.dataset.scenario) {
+      document.querySelectorAll("[data-scenario]").forEach(b => b.classList.remove("active"));
+      e.target.classList.add("active");
+      wordbookState.currentScenario = e.target.dataset.scenario;
+      renderWordBookGrid();
+    }
+  });
+  
+  // 状态筛选
+  document.querySelectorAll("[data-status]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-status]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      wordbookState.currentStatus = btn.dataset.status;
+      renderWordBookGrid();
+    });
+  });
+  
+  // 模式筛选
+  document.querySelectorAll("[data-mode]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-mode]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      wordbookState.currentMode = btn.dataset.mode;
+      // 可以根据模式切换显示方式
+      renderWordBookGrid();
+    });
+  });
+}
+
+// 标记单词状态
+function markCurrentWord(status) {
+  if (!wordbookState.selectedWord) {
+    alert("请先选择一个单词！");
+    return;
+  }
+  
+  wordbookState.wordStatuses[wordbookState.selectedWord] = status;
+  saveWordStatuses();
+  renderWordBookGrid();
+  
+  // 清除选中
+  wordbookState.selectedWord = null;
+  document.querySelectorAll(".word-card").forEach(card => {
+    card.classList.remove("selected");
+  });
+}
+
+// 保存单词状态
+function saveWordStatuses() {
+  localStorage.setItem("wordbookStatuses", JSON.stringify(wordbookState.wordStatuses));
+}
+
+// 加载单词状态
+function loadWordStatuses() {
+  const saved = localStorage.getItem("wordbookStatuses");
+  if (saved) {
+    wordbookState.wordStatuses = JSON.parse(saved);
+  }
+}
+
+// 单词卡片点击选中
+document.addEventListener("click", (e) => {
+  const wordCard = e.target.closest(".word-card");
+  if (wordCard) {
+    // 如果点击的是按钮，不选中
+    if (e.target.closest(".icon-btn") || e.target.closest(".word-card-footer")) {
+      return;
+    }
+    
+    // 清除其他选中
+    document.querySelectorAll(".word-card").forEach(card => {
+      card.classList.remove("selected");
+    });
+    
+    // 选中当前卡片
+    wordCard.classList.add("selected");
+    wordbookState.selectedWord = wordCard.dataset.word;
+  }
+});
+
+// 播放发音（模拟）
+function playSound(text) {
+  // 这里可以集成真实的TTS API
+  console.log("播放发音:", text);
+  alert(`播放发音: ${text}`);
+}
+
+// 隐藏单词
+function hideWord(word) {
+  if (confirm(`确定要隐藏单词 "${word}" 吗？`)) {
+    const card = document.querySelector(`[data-word="${word}"]`);
+    if (card) {
+      card.style.display = "none";
+    }
+  }
+}
+
+// AI学习功能
+let aiLearningWords = [];
+
+function addToAILearning() {
+  if (!wordbookState.selectedWord) {
+    alert("请先选择一个单词！");
+    return;
+  }
+  
+  const word = ieltsWordBook.find(w => w.word === wordbookState.selectedWord);
+  if (!word) return;
+  
+  if (aiLearningWords.includes(word.word)) {
+    alert(`"${word.word}" 已在AI学习列表中！`);
+    return;
+  }
+  
+  aiLearningWords.push(word.word);
+  showAILearning(word);
+}
+
+function showAILearning(word) {
+  const modal = document.getElementById("aiLearningModal");
+  const content = document.getElementById("aiLearningContent");
+  
+  if (!modal || !content) return;
+  
+  modal.classList.remove("hidden");
+  content.innerHTML = '<div class="loading-ai">AI正在生成学习内容...</div>';
+  
+  // 模拟AI生成（实际应该调用AI API）
+  setTimeout(() => {
+    const aiContent = generateAILearningContent(word);
+    content.innerHTML = aiContent;
+  }, 1500);
+}
+
+function generateAILearningContent(word) {
+  return `
+    <div class="ai-content">
+      <h3 class="ai-word-title">${word.word} - AI学习内容</h3>
+      <div class="ai-section">
+        <h4>📚 深度解析</h4>
+        <p>${word.word} 是一个${word.pos}，在雅思考试中${word.frequency}出现。这个词的核心含义是"${word.meaning}"。</p>
       </div>
-      <button class="btn ghost btn-sm" onclick="addWordToLearning('${word.word}')">加入学习</button>
+      <div class="ai-section">
+        <h4>🔗 常用搭配</h4>
+        <p><strong>${word.collocation || "常用搭配"}</strong> - ${word.collocationMeaning || "搭配含义"}</p>
+        <p>这个搭配在学术写作和口语中都非常实用，可以帮助你更自然地表达观点。</p>
+      </div>
+      <div class="ai-section">
+        <h4>💡 学习建议</h4>
+        <ul>
+          <li>尝试用这个词造3个不同的句子</li>
+          <li>在口语练习中主动使用这个词</li>
+          <li>注意这个词在不同语境下的细微差别</li>
+        </ul>
+      </div>
+      <div class="ai-section">
+        <h4>📝 扩展练习</h4>
+        <p>请用 <strong>${word.word}</strong> 完成以下句子：</p>
+        <p class="ai-exercise">The government needs to ${word.word} the problem of...</p>
+      </div>
     </div>
-  `).join("");
-  
-  if (paginationEl) {
-    renderWordBookPagination(totalPages);
+  `;
+}
+
+function closeAILearning() {
+  const modal = document.getElementById("aiLearningModal");
+  if (modal) {
+    modal.classList.add("hidden");
   }
 }
 
 function getCategoryName(category) {
+  // 如果category已经是中文，直接返回
+  if (wordScenarios.includes(category)) {
+    return category;
+  }
   const names = {
     geography: "地理",
     nature: "自然",
@@ -678,25 +1249,12 @@ function addWordToLearning(word) {
 }
 
 function bindWordBook() {
-  const searchInput = document.getElementById("wordbookSearch");
-  const categorySelect = document.getElementById("wordbookCategory");
-  
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      wordbookCurrentPage = 1;
-      renderWordBook();
-    });
-  }
-  
-  if (categorySelect) {
-    categorySelect.addEventListener("change", () => {
-      wordbookCurrentPage = 1;
-      renderWordBook();
-    });
-  }
+  // 新的单词书使用 initWordBook 初始化
+  loadWordStatuses();
+  initWordBook();
 }
 
-// 单词查询
+// 单词查询 - 使用 Free Dictionary API
 async function searchWord(query) {
   const resultEl = document.getElementById("wordSearchResult");
   if (!resultEl) return;
@@ -708,47 +1266,129 @@ async function searchWord(query) {
   
   resultEl.innerHTML = "<div class='loading'>查询中...</div>";
   
+  const cleanQuery = query.trim().toLowerCase();
+  
   try {
-    // 使用 MyMemory API 作为占位符（实际应该使用有道翻译API）
-    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=en|zh`);
+    // 使用 Free Dictionary API
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanQuery)}`);
+    
+    if (!response.ok) {
+      throw new Error("Word not found");
+    }
+    
     const data = await response.json();
     
-    if (data.responseData && data.responseData.translatedText) {
-      const translation = data.responseData.translatedText;
-      resultEl.innerHTML = `
+    if (data && data.length > 0) {
+      const wordData = data[0];
+      const word = wordData.word;
+      const phonetic = wordData.phonetic || wordData.phonetics?.find(p => p.text)?.text || "";
+      const meanings = wordData.meanings || [];
+      
+      let html = `
         <div class="word-result-card">
           <div class="word-result-header">
-            <h3>${query}</h3>
-            <button class="btn primary" onclick="addWordToLearning('${query}')">加入学习</button>
+            <div>
+              <h3>${word}</h3>
+              ${phonetic ? `<p class="word-phonetic-result">${phonetic}</p>` : ""}
+            </div>
+            <div class="word-result-actions">
+              <button class="icon-btn sound-btn" onclick="playWordSound('${word}')">🔊</button>
+              <button class="btn primary" onclick="addWordToLearning('${word}')">加入学习</button>
+            </div>
           </div>
           <div class="word-result-content">
-            <div class="result-item"><strong>翻译：</strong>${translation}</div>
+      `;
+      
+      meanings.forEach(meaning => {
+        const partOfSpeech = meaning.partOfSpeech || "";
+        const definitions = meaning.definitions || [];
+        
+        html += `
+          <div class="meaning-section">
+            <div class="pos-badge">${partOfSpeech}</div>
+            <ul class="definitions-list">
+        `;
+        
+        definitions.slice(0, 3).forEach((def, idx) => {
+          html += `
+            <li class="definition-item">
+              <div class="definition-text">${idx + 1}. ${def.definition}</div>
+              ${def.example ? `<div class="definition-example">例: ${def.example}</div>` : ""}
+            </li>
+          `;
+        });
+        
+        html += `
+            </ul>
+          </div>
+        `;
+      });
+      
+      html += `
           </div>
         </div>
       `;
+      
+      resultEl.innerHTML = html;
     } else {
-      throw new Error("未找到翻译结果");
+      throw new Error("No results");
     }
   } catch (error) {
-    // 如果API失败，使用本地数据
-    const localWord = ieltsWordBook.find(w => w.word.toLowerCase() === query.toLowerCase());
-    if (localWord) {
+    // 如果 Free Dictionary API 失败，尝试备用方案
+    try {
+      // 备用：使用本地数据
+      const localWord = ieltsWordBook.find(w => w.word.toLowerCase() === cleanQuery);
+      if (localWord) {
+        resultEl.innerHTML = `
+          <div class="word-result-card">
+            <div class="word-result-header">
+              <div>
+                <h3>${localWord.word}</h3>
+                ${localWord.phonetic ? `<p class="word-phonetic-result">${localWord.phonetic}</p>` : ""}
+              </div>
+              <button class="btn primary" onclick="addWordToLearning('${localWord.word}')">加入学习</button>
+            </div>
+            <div class="word-result-content">
+              <div class="result-item"><strong>词性：</strong>${localWord.pos || "n."}</div>
+              <div class="result-item"><strong>中文：</strong>${localWord.meaning}</div>
+              ${localWord.collocation ? `<div class="result-item"><strong>搭配：</strong>${localWord.collocation} - ${localWord.collocationMeaning}</div>` : ""}
+              ${localWord.example ? `<div class="result-item"><strong>例句：</strong>${localWord.example}</div>` : ""}
+            </div>
+          </div>
+        `;
+      } else {
+        resultEl.innerHTML = `
+          <div class="word-result-card">
+            <div class="error-message">
+              <p>未找到该单词，请检查拼写或尝试其他单词</p>
+              <p class="error-hint">提示：请确保输入的是英文单词</p>
+            </div>
+          </div>
+        `;
+      }
+    } catch (fallbackError) {
       resultEl.innerHTML = `
         <div class="word-result-card">
-          <div class="word-result-header">
-            <h3>${localWord.word}</h3>
-            <button class="btn primary" onclick="addWordToLearning('${localWord.word}')">加入学习</button>
-          </div>
-          <div class="word-result-content">
-            <div class="result-item"><strong>中文：</strong>${localWord.meaning}</div>
-            <div class="result-item"><strong>主题：</strong>${getCategoryName(localWord.category)}</div>
-            <div class="result-item"><strong>频率：</strong>${localWord.frequency}</div>
+          <div class="error-message">
+            <p>查询失败，请稍后重试</p>
           </div>
         </div>
       `;
-    } else {
-      resultEl.innerHTML = "<div class='loading'>未找到该单词，请检查拼写或尝试其他单词</div>";
     }
+  }
+}
+
+// 播放单词发音（模拟）
+function playWordSound(word) {
+  // 这里可以集成真实的TTS API
+  console.log("播放发音:", word);
+  // 可以使用 Web Speech API
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+  } else {
+    alert(`播放发音: ${word}`);
   }
 }
 
@@ -773,6 +1413,400 @@ function bindWordSearch() {
         performSearch();
       }
     });
+  }
+}
+
+// ==================== 真题模拟模块 ====================
+
+// 真题数据（模拟数据，后续可接入真实数据源）
+const mockTests = {
+  "2025": {
+    "comprehensive": [
+      { id: "2025-01-comprehensive", title: "雅思真题试卷 一月", type: "comprehensive", participants: 1812096, month: "一月" },
+      { id: "2025-02-comprehensive", title: "雅思真题试卷 二月", type: "comprehensive", participants: 624014, month: "二月" },
+      { id: "2025-03-comprehensive", title: "雅思真题试卷 三月", type: "comprehensive", participants: 482075, month: "三月" }
+    ],
+    "listening": [
+      { id: "2025-01-listening-1", title: "雅思真题试卷一月 雅思听力真题1", type: "listening", participants: 570890, month: "一月" },
+      { id: "2025-01-listening-2", title: "雅思真题试卷一月 雅思听力真题2", type: "listening", participants: 286192, month: "一月" },
+      { id: "2025-02-listening-1", title: "雅思真题试卷二月 雅思听力真题1", type: "listening", participants: 197138, month: "二月" },
+      { id: "2025-02-listening-2", title: "雅思真题试卷二月 雅思听力真题2", type: "listening", participants: 102544, month: "二月" }
+    ],
+    "reading": [
+      { id: "2025-01-reading-1", title: "雅思真题试卷一月 雅思阅读真题1", type: "reading", participants: 450321, month: "一月" },
+      { id: "2025-01-reading-2", title: "雅思真题试卷一月 雅思阅读真题2", type: "reading", participants: 320156, month: "一月" }
+    ],
+    "writing": [
+      { id: "2025-01-writing-1", title: "雅思真题试卷一月 雅思写作真题1", type: "writing", participants: 380245, month: "一月" },
+      { id: "2025-01-writing-2", title: "雅思真题试卷一月 雅思写作真题2", type: "writing", participants: 290123, month: "一月" }
+    ],
+    "speaking": [
+      { id: "2025-01-speaking-1", title: "雅思真题试卷一月 雅思口语真题1", type: "speaking", participants: 410567, month: "一月" },
+      { id: "2025-01-speaking-2", title: "雅思真题试卷一月 雅思口语真题2", type: "speaking", participants: 315234, month: "一月" }
+    ]
+  },
+  "2024": {
+    "comprehensive": [
+      { id: "2024-01-comprehensive", title: "雅思真题试卷 一月", type: "comprehensive", participants: 5596908, month: "一月" },
+      { id: "2024-02-comprehensive", title: "雅思真题试卷 二月", type: "comprehensive", participants: 2269077, month: "二月" }
+    ],
+    "listening": [
+      { id: "2024-01-listening-1", title: "雅思真题试卷一月 雅思听力真题1", type: "listening", participants: 1200000, month: "一月" },
+      { id: "2024-01-listening-2", title: "雅思真题试卷一月 雅思听力真题2", type: "listening", participants: 980000, month: "一月" }
+    ],
+    "reading": [
+      { id: "2024-01-reading-1", title: "雅思真题试卷一月 雅思阅读真题1", type: "reading", participants: 1100000, month: "一月" }
+    ],
+    "writing": [
+      { id: "2024-01-writing-1", title: "雅思真题试卷一月 雅思写作真题1", type: "writing", participants: 950000, month: "一月" }
+    ],
+    "speaking": [
+      { id: "2024-01-speaking-1", title: "雅思真题试卷一月 雅思口语真题1", type: "speaking", participants: 1050000, month: "一月" }
+    ]
+  },
+  "2023": {
+    "comprehensive": [
+      { id: "2023-01-comprehensive", title: "雅思真题试卷 一月", type: "comprehensive", participants: 5284876, month: "一月" },
+      { id: "2023-02-comprehensive", title: "雅思真题试卷 二月", type: "comprehensive", participants: 2080568, month: "二月" }
+    ],
+    "listening": [
+      { id: "2023-01-listening-1", title: "雅思真题试卷一月 雅思听力真题1", type: "listening", participants: 1500000, month: "一月" }
+    ],
+    "reading": [
+      { id: "2023-01-reading-1", title: "雅思真题试卷一月 雅思阅读真题1", type: "reading", participants: 1400000, month: "一月" }
+    ],
+    "writing": [
+      { id: "2023-01-writing-1", title: "雅思真题试卷一月 雅思写作真题1", type: "writing", participants: 1300000, month: "一月" }
+    ],
+    "speaking": [
+      { id: "2023-01-speaking-1", title: "雅思真题试卷一月 雅思口语真题1", type: "speaking", participants: 1350000, month: "一月" }
+    ]
+  }
+};
+
+// 真题状态管理
+let mockState = {
+  currentType: "listening",
+  currentYear: "2025",
+  currentTest: null,
+  examTimer: null,
+  examTimeLeft: 3600 // 60分钟，单位：秒
+};
+
+// 初始化真题模块
+function initMockTests() {
+  renderYearButtons();
+  renderMockList();
+  bindMockFilters();
+}
+
+// 渲染年份按钮
+function renderYearButtons() {
+  const container = document.getElementById("yearButtons");
+  if (!container) return;
+  
+  const years = Object.keys(mockTests).sort((a, b) => b - a);
+  container.innerHTML = years.map(year => `
+    <button class="year-btn ${year === mockState.currentYear ? "active" : ""}" 
+            data-year="${year}">${year}</button>
+  `).join("");
+}
+
+// 渲染题目列表
+function renderMockList() {
+  const container = document.getElementById("mockList");
+  if (!container) return;
+  
+  const tests = mockTests[mockState.currentYear]?.[mockState.currentType] || [];
+  
+  if (tests.length === 0) {
+    container.innerHTML = '<div class="empty-state">暂无该类型的真题</div>';
+    return;
+  }
+  
+  container.innerHTML = tests.map(test => `
+    <div class="mock-card" onclick="startMockExam('${test.id}')">
+      <div class="mock-card-content">
+        <h3 class="mock-card-title">${test.title}</h3>
+        <div class="mock-card-meta">
+          <span class="mock-participants">⚡ ${formatNumber(test.participants)} 模考人次</span>
+          <span class="mock-month">${test.month}</span>
+        </div>
+      </div>
+      <div class="mock-card-action">
+        <button class="btn primary">开始模考</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  }
+  return num.toString();
+}
+
+// 绑定筛选事件
+function bindMockFilters() {
+  // 题型切换
+  document.querySelectorAll(".mock-nav-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".mock-nav-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      mockState.currentType = btn.dataset.type;
+      renderMockList();
+    });
+  });
+  
+  // 年份切换
+  document.addEventListener("click", (e) => {
+    if (e.target.dataset.year) {
+      document.querySelectorAll(".year-btn").forEach(b => b.classList.remove("active"));
+      e.target.classList.add("active");
+      mockState.currentYear = e.target.dataset.year;
+      renderMockList();
+    }
+  });
+  
+  // 搜索
+  const searchInput = document.getElementById("mockSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      filterMockList(e.target.value);
+    });
+  }
+  
+  // 排序
+  const sortSelect = document.getElementById("mockSortSelect");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      sortMockList(e.target.value);
+    });
+  }
+}
+
+function filterMockList(keyword) {
+  const cards = document.querySelectorAll(".mock-card");
+  cards.forEach(card => {
+    const title = card.querySelector(".mock-card-title").textContent;
+    if (title.toLowerCase().includes(keyword.toLowerCase())) {
+      card.style.display = "";
+    } else {
+      card.style.display = "none";
+    }
+  });
+}
+
+function sortMockList(sortBy) {
+  const container = document.getElementById("mockList");
+  const cards = Array.from(container.querySelectorAll(".mock-card"));
+  
+  cards.sort((a, b) => {
+    if (sortBy === "popular") {
+      const aNum = parseInt(a.querySelector(".mock-participants").textContent.replace(/[^0-9]/g, ""));
+      const bNum = parseInt(b.querySelector(".mock-participants").textContent.replace(/[^0-9]/g, ""));
+      return bNum - aNum;
+    } else if (sortBy === "latest") {
+      return 0; // 保持原顺序
+    }
+    return 0;
+  });
+  
+  cards.forEach(card => container.appendChild(card));
+}
+
+// 开始模考
+function startMockExam(testId) {
+  // 查找测试数据
+  let testData = null;
+  for (const year in mockTests) {
+    for (const type in mockTests[year]) {
+      const test = mockTests[year][type].find(t => t.id === testId);
+      if (test) {
+        testData = test;
+        break;
+      }
+    }
+    if (testData) break;
+  }
+  
+  if (!testData) return;
+  
+  mockState.currentTest = testData;
+  mockState.examTimeLeft = getExamTimeLimit(testData.type);
+  
+  // 显示答题界面
+  const modal = document.getElementById("mockExamModal");
+  const examTitle = document.getElementById("examTitle");
+  const examSubtitle = document.getElementById("examSubtitle");
+  const examBody = document.getElementById("examBody");
+  
+  if (modal && examTitle && examSubtitle && examBody) {
+    examTitle.textContent = testData.title;
+    examSubtitle.textContent = `${mockState.currentYear}年${testData.month}`;
+    
+    // 生成题目内容（模拟）
+    examBody.innerHTML = generateExamContent(testData.type);
+    
+    modal.classList.remove("hidden");
+    startExamTimer();
+  }
+}
+
+function getExamTimeLimit(type) {
+  const limits = {
+    "comprehensive": 7200, // 120分钟
+    "listening": 1800, // 30分钟
+    "reading": 3600, // 60分钟
+    "writing": 3600, // 60分钟
+    "speaking": 1800 // 30分钟
+  };
+  return limits[type] || 3600;
+}
+
+function generateExamContent(type) {
+  // 这里生成模拟题目内容
+  const templates = {
+    "listening": `
+      <div class="exam-section">
+        <h3>Section 1</h3>
+        <p class="exam-instruction">Listen to the recording and answer the questions below.</p>
+        <div class="exam-questions">
+          <div class="question-item">
+            <p><strong>Question 1:</strong> What is the main topic of the conversation?</p>
+            <div class="question-options">
+              <label><input type="radio" name="q1" value="A"> A. Travel arrangements</label>
+              <label><input type="radio" name="q1" value="B"> B. Hotel booking</label>
+              <label><input type="radio" name="q1" value="C"> C. Restaurant reservation</label>
+            </div>
+          </div>
+          <div class="question-item">
+            <p><strong>Question 2:</strong> When is the appointment scheduled?</p>
+            <input type="text" class="answer-input" placeholder="Your answer" />
+          </div>
+        </div>
+      </div>
+    `,
+    "reading": `
+      <div class="exam-section">
+        <h3>Reading Passage 1</h3>
+        <div class="reading-passage">
+          <p>The concept of sustainability has become increasingly important in modern society. Governments and organizations worldwide are implementing policies to address environmental challenges...</p>
+        </div>
+        <div class="exam-questions">
+          <div class="question-item">
+            <p><strong>Question 1:</strong> According to the passage, what is the main focus of sustainability policies?</p>
+            <div class="question-options">
+              <label><input type="radio" name="q1" value="A"> A. Economic growth</label>
+              <label><input type="radio" name="q1" value="B"> B. Environmental protection</label>
+              <label><input type="radio" name="q1" value="C"> C. Social development</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    "writing": `
+      <div class="exam-section">
+        <h3>Writing Task 1</h3>
+        <p class="exam-instruction">The chart below shows the percentage of households in owned and rented accommodation in England and Wales between 1918 and 2011. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.</p>
+        <textarea class="writing-answer" rows="10" placeholder="Write your answer here..."></textarea>
+      </div>
+    `,
+    "speaking": `
+      <div class="exam-section">
+        <h3>Part 1: Introduction and Interview</h3>
+        <div class="speaking-question">
+          <p><strong>Question:</strong> Tell me about your hometown.</p>
+          <div class="speaking-recording">
+            <button class="btn primary" onclick="startRecording()">开始录音</button>
+            <span class="recording-status" id="recordingStatus">未开始</span>
+          </div>
+        </div>
+      </div>
+    `,
+    "comprehensive": `
+      <div class="exam-section">
+        <h3>完整模拟考试</h3>
+        <p>本考试包含听力、阅读、写作、口语四个部分，请按照顺序完成。</p>
+        <div class="comprehensive-nav">
+          <button class="btn ghost" onclick="switchExamPart('listening')">听力</button>
+          <button class="btn ghost" onclick="switchExamPart('reading')">阅读</button>
+          <button class="btn ghost" onclick="switchExamPart('writing')">写作</button>
+          <button class="btn ghost" onclick="switchExamPart('speaking')">口语</button>
+        </div>
+      </div>
+    `
+  };
+  
+  return templates[type] || "<p>题目加载中...</p>";
+}
+
+// 考试计时器
+function startExamTimer() {
+  if (mockState.examTimer) {
+    clearInterval(mockState.examTimer);
+  }
+  
+  const timerEl = document.getElementById("examTimer");
+  if (!timerEl) return;
+  
+  mockState.examTimer = setInterval(() => {
+    mockState.examTimeLeft--;
+    
+    if (mockState.examTimeLeft <= 0) {
+      clearInterval(mockState.examTimer);
+      alert("时间到！考试已自动提交。");
+      submitMockExam();
+      return;
+    }
+    
+    const minutes = Math.floor(mockState.examTimeLeft / 60);
+    const seconds = mockState.examTimeLeft % 60;
+    timerEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    
+    // 时间不足5分钟时变红
+    if (mockState.examTimeLeft < 300) {
+      timerEl.style.color = "#ef4444";
+    }
+  }, 1000);
+}
+
+function closeMockExam() {
+  if (confirm("确定要退出考试吗？已作答的内容将不会保存。")) {
+    const modal = document.getElementById("mockExamModal");
+    if (modal) {
+      modal.classList.add("hidden");
+    }
+    if (mockState.examTimer) {
+      clearInterval(mockState.examTimer);
+    }
+  }
+}
+
+function submitMockExam() {
+  if (mockState.examTimer) {
+    clearInterval(mockState.examTimer);
+  }
+  
+  // 这里可以添加提交逻辑
+  alert("答案已提交！评分结果将在稍后显示。");
+  closeMockExam();
+  
+  // 显示报告（模拟）
+  const report = document.getElementById("mockReport");
+  if (report) {
+    report.innerHTML = `
+      <h3>考试报告</h3>
+      <p>总分：7.0</p>
+      <p>听力：7.5</p>
+      <p>阅读：7.0</p>
+      <p>写作：6.5</p>
+      <p>口语：6.5</p>
+      <p>建议：继续加强写作和口语练习，多积累高级词汇和表达。</p>
+    `;
   }
 }
 
@@ -1011,11 +2045,34 @@ function bootstrap() {
     });
   }
   
-  // 初始化单词书
-  renderWordBook();
+  // 初始化单词书（新版本）
+  // renderWordBook(); // 旧版本，已替换
+  bindWordBook();
   
   // 全局查词功能
   initGlobalWordLookup();
+  
+  // 初始化用户设置
+  updateUserAvatar();
+  initAvatarUpload();
+  
+  // 绑定新词数量设置
+  const btnSetTarget = document.getElementById("btnSetTarget");
+  if (btnSetTarget) {
+    btnSetTarget.addEventListener("click", showTargetModal);
+  }
+  
+  // 初始化真题模拟模块
+  // 当切换到真题演练页面时初始化
+  const mockPage = document.getElementById("mock");
+  if (mockPage) {
+    // 延迟初始化，避免页面未显示时执行
+    setTimeout(() => {
+      if (mockPage.classList.contains("active")) {
+        initMockTests();
+      }
+    }, 100);
+  }
 }
 
 // 全局查词功能
