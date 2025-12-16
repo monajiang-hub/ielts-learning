@@ -59,6 +59,10 @@
           <span class="nav-icon">🎬</span>
           <span>地道英语</span>
         </button>
+        <button class="nav-item" data-scroll="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>全局设置</span>
+        </button>
       </nav>
     </aside>
 
@@ -546,19 +550,146 @@
         </div>
       </div>
 
-      <section class="card-panel detail-page" id="wordsearch">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">单词查询 🔍</div>
-            <div class="hint">输入单词，调用有道翻译查询详细释义</div>
+      <section class="detail-page" id="wordsearch">
+        <div class="wordsearch-container">
+          <div class="wordsearch-header">
+            <div>
+              <h2 class="wordsearch-title">单词查询 🔍</h2>
+              <p class="wordsearch-subtitle">输入单词，查询详细释义</p>
+            </div>
+          </div>
+          <div class="wordsearch-search">
+            <input type="text" id="wordSearchInput" placeholder="输入英文单词..." class="wordsearch-input" />
+            <button id="btnWordSearch" class="wordsearch-btn">查询</button>
+          </div>
+          <div id="wordSearchResult" class="wordsearch-result">
+            <div class="wordsearch-placeholder">
+              <div class="placeholder-icon">📖</div>
+              <p>输入英文单词开始查询</p>
+            </div>
           </div>
         </div>
-        <div class="search-section">
-          <div class="search-row-large">
-            <input type="text" id="wordSearchInput" placeholder="输入英文单词或中文..." class="search-input-large" />
-            <button id="btnWordSearch" class="btn primary">查询</button>
+      </section>
+
+      <!-- 全局设置页面 -->
+      <section class="detail-page" id="settings">
+        <div class="settings-container">
+          <h2 class="settings-title">全局设置 ⚙️</h2>
+          
+          <div class="settings-section">
+            <h3 class="section-title">
+              <span>🔊</span> 听力偏好 (Audio)
+            </h3>
+            
+            <div class="settings-grid">
+              <div class="setting-item-large">
+                <label class="setting-label">默认口音</label>
+                <div class="setting-options">
+                  <button class="option-btn" data-setting="accent" data-value="uk" id="accentUK">
+                    <span>🇬🇧</span> UK
+                  </button>
+                  <button class="option-btn active" data-setting="accent" data-value="us" id="accentUS">
+                    <span>🇺🇸</span> US
+                  </button>
+                </div>
+              </div>
+              
+              <div class="setting-item-large">
+                <label class="setting-label">默认音色</label>
+                <div class="setting-options">
+                  <button class="option-btn active" data-setting="voice" data-value="male" id="voiceMale">
+                    <span>👨</span> Male
+                  </button>
+                  <button class="option-btn" data-setting="voice" data-value="female" id="voiceFemale">
+                    <span>👩</span> Female
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setting-item-large">
+              <label class="setting-label">默认倍速</label>
+              <div class="speed-control">
+                <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1.0" class="speed-slider" />
+                <div class="speed-display">
+                  <span class="speed-value" id="speedValue">1.0x</span>
+                  <span class="speed-hint">(标准)</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="wordSearchResult" class="word-search-result"></div>
+          
+          <div class="settings-section">
+            <h3 class="section-title">
+              <span>👁️</span> 阅读体验 (Visual)
+            </h3>
+            
+            <div class="setting-item-large">
+              <label class="setting-label">字体大小</label>
+              <div class="setting-options">
+                <button class="option-btn" data-setting="fontSize" data-value="small">
+                  <span>A-</span>
+                </button>
+                <button class="option-btn active" data-setting="fontSize" data-value="medium">
+                  <span>A</span>
+                </button>
+                <button class="option-btn" data-setting="fontSize" data-value="large">
+                  <span>A+</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="setting-item-large">
+              <label class="setting-label">主题模式</label>
+              <div class="setting-options">
+                <button class="option-btn active" data-setting="theme" data-value="light" id="themeLight">
+                  <span>☀️</span> 浅色
+                </button>
+                <button class="option-btn" data-setting="theme" data-value="dark" id="themeDark">
+                  <span>🌙</span> 深色
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-section">
+            <h3 class="section-title">
+              <span>📚</span> 真题数据管理
+            </h3>
+            
+            <div class="setting-item-large">
+              <label class="setting-label">导入真题数据</label>
+              <div class="import-section">
+                <p class="import-hint">支持导入剑雅4-20真题数据（JSON格式）</p>
+                <input type="file" id="importTestFile" accept=".json" style="display: none;" />
+                <button class="btn primary" onclick="document.getElementById('importTestFile').click()">
+                  选择文件导入
+                </button>
+                <button class="btn ghost" onclick="downloadTestTemplate()">
+                  下载模板
+                </button>
+              </div>
+            </div>
+            
+            <div class="setting-item-large">
+              <label class="setting-label">数据来源说明</label>
+              <div class="data-source-info">
+                <p>📌 <strong>题源获取方式：</strong></p>
+                <ul class="source-list">
+                  <li>1. 购买官方剑桥雅思真题书籍（剑雅4-20）</li>
+                  <li>2. 使用官方授权的在线平台（如 ieltsonlinetests.com）</li>
+                  <li>3. 手动整理题目并按照模板格式导入</li>
+                  <li>4. 联系教育机构获取授权数据</li>
+                </ul>
+                <p class="warning-text">⚠️ 注意：请确保使用的真题数据符合版权要求</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-actions">
+            <button class="btn primary" onclick="saveGlobalSettings()">保存设置</button>
+            <button class="btn ghost" onclick="resetSettings()">恢复默认</button>
+          </div>
         </div>
       </section>
 
