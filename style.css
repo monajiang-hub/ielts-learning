@@ -1949,6 +1949,7 @@ input {
   background: #e5e7eb;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .speed-slider::-webkit-slider-thumb {
