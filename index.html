@@ -88,7 +88,10 @@
             <span id="coinCount">0</span>G
           </div>
           <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
-          <div class="avatar">U</div>
+          <div class="avatar" id="userAvatar" onclick="showUserSettings()">
+            <span id="avatarText">U</span>
+            <img id="avatarImage" src="" alt="" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+          </div>
         </div>
       </header>
 
@@ -146,6 +149,10 @@
             <div class="word-row ratio-row">
               <span class="word-label" id="vocabRatioDisplay">新词:复习 = 1:2</span>
               <button class="btn-link" id="btnSetRatio">设置比例</button>
+            </div>
+            <div class="word-row">
+              <span class="word-label">每日新词目标：</span>
+              <button class="btn-link" id="btnSetTarget">设置数量</button>
             </div>
           </div>
           <button class="btn secondary" id="ctaVocab">开始背诵</button>
@@ -277,6 +284,57 @@
         </div>
       </div>
 
+      <!-- 用户设置模态框 -->
+      <div id="userSettingsModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+          <div class="modal-main" style="padding: 32px;">
+            <h2 class="modal-title" style="margin-bottom: 24px;">个人设置</h2>
+            <div class="settings-form">
+              <div class="setting-item">
+                <label>用户名</label>
+                <input type="text" id="userNameInput" placeholder="输入你的名字" class="setting-input" />
+              </div>
+              <div class="setting-item">
+                <label>头像</label>
+                <div class="avatar-upload">
+                  <div class="avatar-preview" id="avatarPreview">
+                    <span id="previewText">U</span>
+                    <img id="previewImage" src="" alt="" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+                  </div>
+                  <div class="avatar-options">
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" />
+                    <button class="btn ghost" onclick="document.getElementById('avatarFileInput').click()">上传图片</button>
+                    <button class="btn ghost" onclick="useDefaultAvatar()">使用默认</button>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn primary" onclick="saveUserSettings()">保存</button>
+                <button class="btn ghost" onclick="closeUserSettings()">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新词数量设置模态框 -->
+      <div id="targetModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px; height: auto;">
+          <div class="modal-main" style="padding: 32px;">
+            <h2 class="modal-title" style="margin-bottom: 24px;">设置每日新词目标</h2>
+            <div class="setting-item">
+              <label>每日新词数量</label>
+              <input type="number" id="newWordTargetInput" min="1" max="200" step="1" class="setting-input" />
+              <p class="setting-hint">建议范围：10-100个/天</p>
+            </div>
+            <div class="setting-actions">
+              <button class="btn primary" onclick="saveWordTarget()">保存</button>
+              <button class="btn ghost" onclick="closeTargetModal()">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 查词弹窗 -->
       <div id="dictPopover" class="dict-popover">
         <div class="dict-header">
@@ -343,35 +401,150 @@
         <div class="timer-row"><span class="timer" data-module="writing">00:00</span><button class="btn ghost start-btn" data-module="writing">开始</button></div>
       </section>
 
-      <section class="card-panel detail-page" id="mock">
-        <div class="card-title">真题演练 🎯（锁定考试参数）</div>
-        <div class="hint">全真计时，倍速/音色/口音/主题已锁定。</div>
-        <button class="btn primary" id="startMock">开始模拟</button>
-        <div id="mockReport" class="report"></div>
-      </section>
-
-      <section class="card-panel detail-page" id="wordbook">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">雅思单词书 📚</div>
-            <div class="hint">查看所有雅思单词，按主题分类浏览</div>
+      <section class="detail-page" id="mock">
+        <div class="mock-container">
+          <!-- 顶部导航栏 -->
+          <div class="mock-nav">
+            <button class="mock-nav-btn" data-type="comprehensive">
+              <span>📊</span> 雅思综合
+            </button>
+            <button class="mock-nav-btn active" data-type="listening">
+              <span>🎧</span> 听力
+            </button>
+            <button class="mock-nav-btn" data-type="reading">
+              <span>📖</span> 阅读
+            </button>
+            <button class="mock-nav-btn" data-type="writing">
+              <span>✏️</span> 写作
+            </button>
+            <button class="mock-nav-btn" data-type="speaking">
+              <span>🎤</span> 口语
+            </button>
           </div>
-          <div class="panel-actions">
-            <input type="text" id="wordbookSearch" placeholder="搜索单词..." class="search-input" />
-            <select id="wordbookCategory" class="select-input">
-              <option value="">全部主题</option>
-              <option value="geography">地理</option>
-              <option value="nature">自然</option>
-              <option value="education">教育</option>
-              <option value="technology">科技</option>
-              <option value="culture">文化</option>
-              <option value="business">商业</option>
+          
+          <!-- 搜索和筛选 -->
+          <div class="mock-filters">
+            <div class="mock-search">
+              <input type="text" id="mockSearchInput" placeholder="Search..." class="mock-search-input" />
+              <span class="mock-search-icon">🔍</span>
+            </div>
+            <select id="mockSortSelect" class="mock-sort">
+              <option value="latest">最新</option>
+              <option value="popular">最热</option>
+              <option value="year">按年份</option>
             </select>
           </div>
+          
+          <!-- 年份筛选 -->
+          <div class="mock-year-filter">
+            <span class="filter-label">年份:</span>
+            <div class="year-buttons" id="yearButtons">
+              <!-- 年份按钮将通过JS动态生成 -->
+            </div>
+          </div>
+          
+          <!-- 题目列表 -->
+          <div class="mock-list" id="mockList">
+            <!-- 题目卡片将通过JS动态生成 -->
+          </div>
         </div>
-        <div id="wordbookList" class="wordbook-list"></div>
-        <div class="pagination" id="wordbookPagination"></div>
       </section>
+
+      <!-- 答题界面模态框 -->
+      <div id="mockExamModal" class="modal-overlay hidden">
+        <div class="modal-content mock-exam-content">
+          <div class="mock-exam-header">
+            <div class="exam-title-info">
+              <h2 id="examTitle">雅思真题试卷</h2>
+              <p id="examSubtitle">2025年1月 - 听力真题1</p>
+            </div>
+            <div class="exam-timer">
+              <span class="timer-label">剩余时间:</span>
+              <span class="timer-value" id="examTimer">60:00</span>
+            </div>
+            <button class="modal-close-btn" onclick="closeMockExam()">×</button>
+          </div>
+          <div class="mock-exam-body" id="examBody">
+            <!-- 题目内容将通过JS动态生成 -->
+          </div>
+          <div class="mock-exam-footer">
+            <button class="btn ghost" onclick="closeMockExam()">退出</button>
+            <button class="btn primary" onclick="submitMockExam()">提交答案</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="detail-page" id="wordbook">
+        <div class="wordbook-container">
+          <!-- 顶部筛选栏 -->
+          <div class="wordbook-filters">
+            <div class="filter-group">
+              <span class="filter-label">主题:</span>
+              <div class="filter-buttons">
+                <button class="filter-btn" data-topic="all">全部</button>
+                <button class="filter-btn active" data-topic="true-scripture">雅思词汇真经</button>
+                <button class="filter-btn" data-topic="check-in">雅思词汇打卡</button>
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <span class="filter-label">场景:</span>
+              <div class="filter-buttons scenario-buttons" id="scenarioButtons">
+                <!-- 场景按钮将通过JS动态生成 -->
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <span class="filter-label">状态:</span>
+              <div class="filter-buttons">
+                <button class="filter-btn" data-status="all">全部</button>
+                <button class="filter-btn" data-status="unlabeled">未标注</button>
+                <button class="filter-btn" data-status="known">认识</button>
+                <button class="filter-btn" data-status="unknown">不认识</button>
+                <button class="filter-btn" data-status="vague">模糊</button>
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <span class="filter-label">模式:</span>
+              <div class="filter-buttons">
+                <button class="filter-btn active" data-mode="list">列表模式</button>
+                <button class="filter-btn" data-mode="learn">学习模式</button>
+                <button class="filter-btn" data-mode="dictation">听写</button>
+                <button class="filter-btn" data-mode="flashcard">卡片背单词</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 单词卡片网格 -->
+          <div class="wordbook-grid" id="wordbookGrid">
+            <!-- 单词卡片将通过JS动态生成 -->
+          </div>
+          
+          <!-- 底部操作栏 -->
+          <div class="wordbook-actions" id="wordbookActions">
+            <button class="action-btn btn-known" onclick="markCurrentWord('known')">认识</button>
+            <button class="action-btn btn-unknown" onclick="markCurrentWord('unknown')">不认识</button>
+            <button class="action-btn btn-vague" onclick="markCurrentWord('vague')">模糊</button>
+            <button class="action-btn btn-add" onclick="addToAILearning()">+</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI学习模态框 -->
+      <div id="aiLearningModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 700px; height: auto; max-height: 80vh; overflow-y: auto;">
+          <div class="modal-main" style="padding: 32px;">
+            <div class="modal-header-flex">
+              <h2 class="modal-title">AI学习内容</h2>
+              <button class="modal-close-btn" onclick="closeAILearning()">×</button>
+            </div>
+            <div class="ai-learning-content" id="aiLearningContent">
+              <div class="loading-ai">AI正在生成学习内容...</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section class="card-panel detail-page" id="wordsearch">
         <div class="panel-head">
