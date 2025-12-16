@@ -58,7 +58,13 @@ a { color: inherit; text-decoration: none; }
   color: #6b7280;
   font-weight: 500;
 }
-.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.top-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  flex-wrap: wrap; 
+  justify-content: flex-end;
+}
 .chip {
   padding: 8px 12px;
   border-radius: 999px;
@@ -71,7 +77,8 @@ a { color: inherit; text-decoration: none; }
 .chip.gold { background: #fff7ed; color: #fb923c; }
 .chip.ghost { background: #f8fafc; color: #475569; }
 .avatar {
-  width: 36px; height: 36px;
+  width: 36px; 
+  height: 36px;
   border-radius: 50%;
   background: #4f46e5;
   color: #fff;
@@ -80,6 +87,8 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .avatar:hover {
   transform: scale(1.05);
@@ -92,6 +101,12 @@ a { color: inherit; text-decoration: none; }
   font-size: 14px;
   margin-bottom: 8px;
   width: 100%;
+}
+.homepage-content {
+  display: block;
+}
+.homepage-content.hidden {
+  display: none !important;
 }
 .detail-page {
   display: none !important;
@@ -114,7 +129,42 @@ a { color: inherit; text-decoration: none; }
 .hero-left .status { color: #4b5563; margin: 0 0 10px; }
 .status-label { color: #10b981; font-weight: 700; }
 .hero-actions { display: flex; gap: 10px; margin-bottom: 10px; }
-.hero-icons { font-size: 28px; }
+.btn-enter {
+  padding: 14px 24px !important;
+  font-size: 16px !important;
+}
+.hero-icons { 
+  font-size: 32px; 
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+.icon-animate {
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.icon-animate:hover {
+  transform: scale(1.2) rotate(5deg);
+}
+.icon-1 {
+  animation-delay: 0s;
+}
+.icon-2 {
+  animation-delay: 1s;
+}
+.icon-3 {
+  animation-delay: 2s;
+}
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
 .word-card {
   background: #fff;
   border-radius: 14px;
@@ -469,3 +519,4 @@ input {
     width: 100%;
   }
 }
+
