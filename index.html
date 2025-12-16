@@ -17,8 +17,7 @@
         <div class="nav-title">知识庄园</div>
         <button class="nav-item active" data-scroll="hero">首页</button>
         <button class="nav-item" data-scroll="vocab">单词学习</button>
-        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
-        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
+        <div class="nav-title mt">Training Modules</div>
         <button class="nav-item" data-scroll="listening">听力训练</button>
         <button class="nav-item" data-scroll="speaking">口语训练</button>
         <button class="nav-item" data-scroll="reading">阅读训练</button>
@@ -26,6 +25,8 @@
         <div class="nav-title mt">Explore</div>
         <button class="nav-item" data-scroll="mock">真题演练</button>
         <button class="nav-item" data-scroll="idiom">地道英语</button>
+        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
+        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
       </nav>
     </aside>
 
@@ -37,10 +38,10 @@
         </div>
         <div class="top-right">
           <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
-          <div class="chip">TARGET AVG <span id="targetAverage">7</span></div>
+          <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
           <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
+          <div class="avatar">U</div>
         </div>
-        <div class="avatar">U</div>
       </header>
 
       <section class="hero" id="hero">
@@ -130,11 +131,12 @@
         <div class="card-panel countdown">
           <div class="card-title">考试倒计时</div>
           <div class="count-value" id="countValue">未设置</div>
+          <input type="date" id="examDateInput" class="date-input" style="display: none;" />
           <button class="btn ghost" id="btnSetExam">设置考试日期</button>
         </div>
       </section>
 
-      <section class="card-panel large" id="vocab">
+      <section class="card-panel large detail-page" id="vocab">
         <div class="panel-head">
           <div>
             <div class="card-title">词汇背诵 🪴</div>
@@ -160,38 +162,38 @@
         </div>
       </section>
 
-      <section class="card-panel" id="listening">
+      <section class="card-panel detail-page" id="listening">
         <div class="card-title">听力训练 🎧</div>
         <div class="hint">i+1 难度，计时记录</div>
         <div class="timer-row"><span class="timer" data-module="listening">00:00</span><button class="btn ghost start-btn" data-module="listening">开始</button></div>
       </section>
 
-      <section class="card-panel" id="speaking">
+      <section class="card-panel detail-page" id="speaking">
         <div class="card-title">口语训练 🎙️</div>
         <div class="hint">i+1 难度，计时记录</div>
         <div class="timer-row"><span class="timer" data-module="speaking">00:00</span><button class="btn ghost start-btn" data-module="speaking">开始</button></div>
       </section>
 
-      <section class="card-panel" id="reading">
+      <section class="card-panel detail-page" id="reading">
         <div class="card-title">阅读训练 📖</div>
         <div class="hint">i+1 难度，计时记录</div>
         <div class="timer-row"><span class="timer" data-module="reading">00:00</span><button class="btn ghost start-btn" data-module="reading">开始</button></div>
       </section>
 
-      <section class="card-panel" id="writing">
+      <section class="card-panel detail-page" id="writing">
         <div class="card-title">写作训练 ✏️</div>
         <div class="hint">i+1 难度，计时记录</div>
         <div class="timer-row"><span class="timer" data-module="writing">00:00</span><button class="btn ghost start-btn" data-module="writing">开始</button></div>
       </section>
 
-      <section class="card-panel" id="mock">
+      <section class="card-panel detail-page" id="mock">
         <div class="card-title">真题演练 🎯（锁定考试参数）</div>
         <div class="hint">全真计时，倍速/音色/口音/主题已锁定。</div>
         <button class="btn primary" id="startMock">开始模拟</button>
         <div id="mockReport" class="report"></div>
       </section>
 
-      <section class="card-panel" id="wordbook">
+      <section class="card-panel detail-page" id="wordbook">
         <div class="panel-head">
           <div>
             <div class="card-title">雅思单词书 📚</div>
@@ -214,7 +216,7 @@
         <div class="pagination" id="wordbookPagination"></div>
       </section>
 
-      <section class="card-panel" id="wordsearch">
+      <section class="card-panel detail-page" id="wordsearch">
         <div class="panel-head">
           <div>
             <div class="card-title">单词查询 🔍</div>
@@ -230,7 +232,7 @@
         </div>
       </section>
 
-      <section class="card-panel" id="idiom">
+      <section class="card-panel detail-page" id="idiom">
         <div class="card-title">地道英语 / 俚语 / 热梗 🎬</div>
         <div class="search-row">
           <input id="idiomSearch" placeholder="输入英文或中文关键词" />
@@ -239,7 +241,7 @@
         <div id="idiomList" class="list"></div>
       </section>
 
-      <section class="card-panel" id="export">
+      <section class="card-panel detail-page" id="export">
         <div class="card-title">导出学习内容</div>
         <div class="actions">
           <button id="exportExcel" class="btn">导出 Excel</button>
