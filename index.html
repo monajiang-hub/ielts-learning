@@ -17,6 +17,8 @@
         <div class="nav-title">知识庄园</div>
         <button class="nav-item active" data-scroll="hero">首页</button>
         <button class="nav-item" data-scroll="vocab">单词学习</button>
+        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
+        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
         <div class="nav-title mt">Training Modules</div>
         <button class="nav-item" data-scroll="listening">听力训练</button>
         <button class="nav-item" data-scroll="speaking">口语训练</button>
@@ -25,8 +27,6 @@
         <div class="nav-title mt">Explore</div>
         <button class="nav-item" data-scroll="mock">真题演练</button>
         <button class="nav-item" data-scroll="idiom">地道英语</button>
-        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
-        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
       </nav>
     </aside>
 
@@ -45,15 +45,19 @@
       </header>
 
       <!-- 首页内容（默认显示） -->
+      <div class="homepage-content">
       <section class="hero" id="hero">
         <div class="hero-left">
           <p class="hello">早安，准7分选手！👋</p>
           <p class="status">今日庄园状态：<span class="status-label">需除草</span></p>
           <div class="hero-actions">
-            <button class="btn primary" id="ctaEnter">进入我的庄园</button>
-            <button class="btn ghost" id="ctaExamDate">设置考试日期</button>
+            <button class="btn primary btn-enter" id="ctaEnter">进入我的庄园</button>
           </div>
-          <div class="hero-icons">🏡 🌽 🌲</div>
+          <div class="hero-icons">
+            <span class="icon-animate icon-1">🏡</span>
+            <span class="icon-animate icon-2">🌽</span>
+            <span class="icon-animate icon-3">🌲</span>
+          </div>
         </div>
         <div class="word-card">
           <div class="word-title">单词学习</div>
@@ -136,6 +140,7 @@
           <button class="btn ghost" id="btnSetExam">设置考试日期</button>
         </div>
       </section>
+      </div>
 
       <!-- 详细页面（默认隐藏，通过导航显示） -->
       <section class="card-panel large detail-page" id="vocab">
@@ -261,3 +266,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
