@@ -12,33 +12,81 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <div class="logo">IELTS 7+ 🎓</div>
       <nav class="nav">
-        <div class="nav-title">知识庄园</div>
-        <button class="nav-item active" data-scroll="hero">首页</button>
-        <button class="nav-item" data-scroll="vocab">单词学习</button>
-        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
-        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
+        <button class="nav-item active" data-scroll="hero">
+          <span class="nav-icon">📊</span>
+          <span>数据中心</span>
+        </button>
+        
+        <div class="nav-title">Foundation</div>
+        <button class="nav-item" data-scroll="vocab">
+          <span class="nav-icon">📖</span>
+          <span>单词学习</span>
+        </button>
+        <button class="nav-item" data-scroll="wordbook">
+          <span class="nav-icon">📚</span>
+          <span>雅思单词书</span>
+        </button>
+        <button class="nav-item" data-scroll="wordsearch">
+          <span class="nav-icon">🔍</span>
+          <span>单词查询</span>
+        </button>
+        
         <div class="nav-title mt">Training Modules</div>
-        <button class="nav-item" data-scroll="listening">听力训练</button>
-        <button class="nav-item" data-scroll="speaking">口语训练</button>
-        <button class="nav-item" data-scroll="reading">阅读训练</button>
-        <button class="nav-item" data-scroll="writing">写作训练</button>
-        <div class="nav-title mt">Explore</div>
-        <button class="nav-item" data-scroll="mock">真题演练</button>
-        <button class="nav-item" data-scroll="idiom">地道英语</button>
+        <button class="nav-item" data-scroll="listening">
+          <span class="nav-icon">🎧</span>
+          <span>听力训练</span>
+        </button>
+        <button class="nav-item" data-scroll="speaking">
+          <span class="nav-icon">🎤</span>
+          <span>口语训练</span>
+        </button>
+        <button class="nav-item" data-scroll="reading">
+          <span class="nav-icon">📘</span>
+          <span>阅读训练</span>
+        </button>
+        <button class="nav-item" data-scroll="writing">
+          <span class="nav-icon">✏️</span>
+          <span>写作训练</span>
+        </button>
+        
+        <div class="nav-title mt">System</div>
+        <button class="nav-item" data-scroll="mock">
+          <span class="nav-icon">🎯</span>
+          <span>真题演练</span>
+        </button>
+        <button class="nav-item" data-scroll="idiom">
+          <span class="nav-icon">🎬</span>
+          <span>地道英语</span>
+        </button>
       </nav>
     </aside>
 
     <main class="main">
       <header class="header">
-        <div class="tagline">
-          <div class="quote-en">"The journey of a thousand miles begins with a single step."</div>
-          <div class="quote-cn">千里之行，始于足下</div>
+        <div class="header-left">
+          <div class="logo-header">
+            <div class="logo-icon">🎓</div>
+            <span class="logo-text">IELTS 7+</span>
+          </div>
+          <div class="tagline">
+            <div class="quote-en">"The journey of a thousand miles begins with a single step."</div>
+            <div class="quote-cn">千里之行，始于足下</div>
+          </div>
         </div>
         <div class="top-right">
-          <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
-          <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
+          <div class="target-display" onclick="startAssessment(true)">
+            <div class="target-label">MY TARGET</div>
+            <div class="target-value">
+              <span id="targetAverage">7.0</span>
+              <span class="target-unit">avg</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="chip gold">
+            <span class="coin-icon">💰</span>
+            <span id="coinCount">0</span>G
+          </div>
           <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
           <div class="avatar">U</div>
         </div>
@@ -46,19 +94,44 @@
 
       <!-- 首页内容（默认显示） -->
       <div class="homepage-content">
-      <section class="hero" id="hero">
-        <div class="hero-left">
-          <p class="hello">早安，准7分选手！👋</p>
-          <p class="status">今日庄园状态：<span class="status-label">需除草</span></p>
-          <div class="hero-actions">
-            <button class="btn primary btn-enter" id="ctaEnter">进入我的庄园</button>
+      <div class="hero-grid">
+        <section class="manor-card" id="manor">
+          <div class="manor-content">
+            <h2 class="manor-title">我的知识庄园</h2>
+            <p class="manor-subtitle">Lv.2 维多利亚时期 • 点击打理你的领地</p>
           </div>
-          <div class="hero-icons">
-            <span class="icon-animate icon-1">🏡</span>
-            <span class="icon-animate icon-2">🌽</span>
-            <span class="icon-animate icon-3">🌲</span>
+          <div class="manor-icons">
+            <div class="manor-icon-item" onclick="alert('进入主屋：休息回血')">
+              <div class="manor-icon">🏡</div>
+              <span class="manor-icon-label">主屋</span>
+            </div>
+            <div class="manor-icon-item" onclick="alert('进入农田：收割金币')">
+              <div class="manor-icon">🌽</div>
+              <span class="manor-icon-label">词汇田</span>
+            </div>
+            <div class="manor-icon-item" onclick="alert('进入林场：查看成就')">
+              <div class="manor-icon">🌲</div>
+              <span class="manor-icon-label">阅读林</span>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <section class="plan-card">
+          <div class="plan-header">
+            <h3 class="plan-title">📝 今日计划</h3>
+            <span class="plan-badge">Today</span>
+          </div>
+          <div class="plan-list" id="planList">
+            <!-- 计划列表将通过JS动态生成 -->
+          </div>
+          <div class="plan-input-group">
+            <input type="text" id="planInput" placeholder="添加新计划..." class="plan-input" />
+            <button class="plan-add-btn" onclick="addPlan()">+</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="word-card-section">
         <div class="word-card">
           <div class="word-title">单词学习</div>
           <div class="word-progress">
@@ -130,7 +203,9 @@
               <button class="range-tab" data-range="custom">自定义</button>
             </div>
           </div>
-          <canvas id="timeChart" height="220"></canvas>
+          <div class="chart-container">
+            <canvas id="timeChart"></canvas>
+          </div>
           <div class="chart-hint">每天坚持30分钟听力+30分钟阅读，配合适量口语和写作练习，分数会慢慢涨起来~</div>
         </div>
         <div class="card-panel countdown">
@@ -142,30 +217,100 @@
       </section>
       </div>
 
-      <!-- 详细页面（默认隐藏，通过导航显示） -->
-      <section class="card-panel large detail-page" id="vocab">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">词汇背诵 🪴</div>
-            <div class="hint">点击释义，高亮加入生词本；完成后可听写/释义复习。基于艾宾浩斯记忆曲线自动安排复习。</div>
+      <!-- 能力测评模态框 -->
+      <div id="assessModal" class="modal-overlay hidden">
+        <div class="modal-content">
+          <div class="modal-sidebar">
+            <h2 class="modal-title">能力测评</h2>
+            <ul class="modal-steps">
+              <li class="step-item active">
+                <span class="step-number">1</span>
+                <span>词汇量</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">2</span>
+                <span>听力/阅读</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">3</span>
+                <span>口语/写作</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">4</span>
+                <span>目标设定</span>
+              </li>
+            </ul>
+            <button class="modal-close" onclick="closeAssessment()">退出测试</button>
           </div>
-          <div class="panel-actions">
-            <button class="btn secondary" id="btnReview">快速复习</button>
-            <button class="btn ghost" id="btnSetVocabRatio">设置学习比例</button>
-          </div>
-        </div>
-        <div class="vocab-flex">
-          <div class="vocab-main">
-            <div class="vocab-word" id="vocabWord">earthquake</div>
-            <div class="pill ghost" id="vocabFreq">高频</div>
-            <div class="vocab-options" id="vocabOptions"></div>
-            <div class="vocab-btns">
-              <button class="btn primary" id="knowBtn">认识 ✅</button>
-              <button class="btn ghost" id="dontKnowBtn">不认识 ❌</button>
-              <button class="btn ghost" id="addNotebookBtn">加入生词本</button>
+          <div class="modal-main">
+            <div id="stage1" class="assessment-stage">
+              <h3 class="stage-title">Q1. Select the synonym for "MITIGATE"</h3>
+              <div class="stage-options">
+                <button class="option-btn" onclick="nextStage(2, false)">Worsen</button>
+                <button class="option-btn" onclick="nextStage(2, true)">Alleviate</button>
+              </div>
+            </div>
+            <div id="stage4" class="assessment-stage hidden">
+              <h3 class="stage-title">设定你的目标分数</h3>
+              <p class="stage-subtitle">系统将根据差距生成计划。</p>
+              <div class="goal-grid">
+                <div class="goal-item">
+                  <label>Listening Goal</label>
+                  <input type="number" id="goalL" value="7.0" step="0.5" />
+                </div>
+                <div class="goal-item">
+                  <label>Reading Goal</label>
+                  <input type="number" id="goalR" value="7.5" step="0.5" />
+                </div>
+                <div class="goal-item">
+                  <label>Writing Goal</label>
+                  <input type="number" id="goalW" value="6.5" step="0.5" />
+                </div>
+                <div class="goal-item">
+                  <label>Speaking Goal</label>
+                  <input type="number" id="goalS" value="6.5" step="0.5" />
+                </div>
+              </div>
+              <button class="btn primary" onclick="finishAssessment()">生成学习计划</button>
             </div>
           </div>
-          <div class="vocab-detail" id="vocabDetail"></div>
+        </div>
+      </div>
+
+      <!-- 查词弹窗 -->
+      <div id="dictPopover" class="dict-popover">
+        <div class="dict-header">
+          <h4 class="dict-word" id="popWord">Word</h4>
+          <span class="dict-sound">🔊</span>
+        </div>
+        <p class="dict-phonetic" id="popPhonetic">/phonetic/</p>
+        <p class="dict-definition" id="popDef">Loading...</p>
+        <div class="dict-meta" id="popMeta"></div>
+        <button class="dict-add-btn" id="popAddBtn">+ 加入生词本</button>
+      </div>
+
+      <!-- 详细页面（默认隐藏，通过导航显示） -->
+      <section class="detail-page" id="vocab">
+        <div class="vocab-header">
+          <h2 class="vocab-page-title">单词突击</h2>
+          <button class="btn ghost btn-sm" id="btnSetVocabRatio">
+            <span>⚙️</span> 复习模式
+          </button>
+        </div>
+        <div class="vocab-card">
+          <div class="vocab-progress-indicator">
+            <span id="vocabProgress">1 / 20</span>
+          </div>
+          <div class="vocab-content">
+            <div class="vocab-emoji">🤔</div>
+            <h3 class="vocab-word-large" id="vocabWord">MITIGATE</h3>
+            <p class="vocab-hint" id="vocabHint">[点击查看释义]</p>
+            <div class="vocab-options" id="vocabOptions"></div>
+            <div class="vocab-actions">
+              <button class="btn-vocab btn-dont-know" id="dontKnowBtn">不认识</button>
+              <button class="btn-vocab btn-know" id="knowBtn">认识</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -185,6 +330,11 @@
         <div class="card-title">阅读训练 📖</div>
         <div class="hint">i+1 难度，计时记录</div>
         <div class="timer-row"><span class="timer" data-module="reading">00:00</span><button class="btn ghost start-btn" data-module="reading">开始</button></div>
+        <div class="reading-content interactive-text">
+          <p>The concept of <span>sustainability</span> has become <span>ubiquitous</span> in modern discourse. Governments are striving to <span>implement</span> policies that <span>mitigate</span> environmental degradation.</p>
+          <p>However, critics argue that these measures are often <span>superficial</span>. True change requires a <span>paradigm</span> shift in how we consume resources. For instance, the <span>proliferation</span> of electric vehicles...</p>
+          <p class="reading-tip">[Tip: Click any word above to look it up!]</p>
+        </div>
       </section>
 
       <section class="card-panel detail-page" id="writing">
