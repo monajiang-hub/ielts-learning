@@ -1,139 +1,282 @@
-// 纯前端演示逻辑：页面切换 + 四科学习柱状图 + 单词本 + 真题单独计时
-
+// 前端静态逻辑（无打包）
 let chartInstance = null;
-let currentRange = 'day'; // day/week/month/quarter/year/custom
 let vocabIndex = 0;
-let mockTimerId = null;
-
 const sampleVocab = [
-  { word: "earthquake",  meaning: "地震",     meaning_en: "sudden shaking of the ground", phrases: "earthquake zone; minor tremor", root: "earth + quake",   freq: "高频" },
-  { word: "sustainable", meaning: "可持续的", meaning_en: "able to be maintained",        phrases: "sustainable development",      root: "sustain + able", freq: "高频" },
-  { word: "biodiversity",meaning: "生物多样性",meaning_en: "variety of life in habitat",   phrases: "conserve biodiversity",        root: "bio + diversity",freq: "中频" },
+  { word: "earthquake", meaning: "地震", meaning_en: "sudden shaking of the ground", phrases: "earthquake zone; minor tremor", root: "earth + quake", freq: "高频", category: "geography" },
+  { word: "sustainable", meaning: "可持续的", meaning_en: "able to be maintained", phrases: "sustainable development", root: "sustain + able", freq: "高频", category: "nature" },
+  { word: "biodiversity", meaning: "生物多样性", meaning_en: "variety of life in habitat", phrases: "conserve biodiversity", root: "bio + diversity", freq: "中频", category: "nature" },
 ];
 
-const sampleIdioms = [
-  { phrase: "spill the tea", cn: "爆料 / 说八卦", en: "to gossip or share juicy info", examples: "Come on, spill the tea!" },
-  { phrase: "hit the books", cn: "刻苦学习",       en: "to begin studying hard",         examples: "I need to hit the books for IELTS." },
+// 雅思单词书数据（示例数据，实际应该从数据库或API获取）
+const ieltsWordBook = [
+  // 地理类
+  { word: "earthquake", meaning: "地震", meaning_en: "sudden shaking of the ground", phrases: "earthquake zone", category: "geography", freq: "高频" },
+  { word: "volcano", meaning: "火山", meaning_en: "mountain that erupts lava", phrases: "active volcano", category: "geography", freq: "高频" },
+  { word: "tsunami", meaning: "海啸", meaning_en: "large ocean wave", phrases: "tsunami warning", category: "geography", freq: "中频" },
+  { word: "peninsula", meaning: "半岛", meaning_en: "land surrounded by water on three sides", phrases: "Iberian peninsula", category: "geography", freq: "中频" },
+  // 自然类
+  { word: "sustainable", meaning: "可持续的", meaning_en: "able to be maintained", phrases: "sustainable development", category: "nature", freq: "高频" },
+  { word: "biodiversity", meaning: "生物多样性", meaning_en: "variety of life", phrases: "conserve biodiversity", category: "nature", freq: "高频" },
+  { word: "ecosystem", meaning: "生态系统", meaning_en: "biological community", phrases: "marine ecosystem", category: "nature", freq: "高频" },
+  { word: "habitat", meaning: "栖息地", meaning_en: "natural environment", phrases: "natural habitat", category: "nature", freq: "中频" },
+  // 教育类
+  { word: "curriculum", meaning: "课程", meaning_en: "subjects taught", phrases: "school curriculum", category: "education", freq: "高频" },
+  { word: "tuition", meaning: "学费", meaning_en: "money paid for education", phrases: "tuition fees", category: "education", freq: "高频" },
+  { word: "scholarship", meaning: "奖学金", meaning_en: "financial aid for students", phrases: "apply for scholarship", category: "education", freq: "高频" },
+  // 科技类
+  { word: "innovation", meaning: "创新", meaning_en: "new idea or method", phrases: "technological innovation", category: "technology", freq: "高频" },
+  { word: "artificial", meaning: "人工的", meaning_en: "made by humans", phrases: "artificial intelligence", category: "technology", freq: "高频" },
+  // 文化类
+  { word: "heritage", meaning: "遗产", meaning_en: "valued traditions", phrases: "cultural heritage", category: "culture", freq: "高频" },
+  { word: "tradition", meaning: "传统", meaning_en: "customs passed down", phrases: "cultural tradition", category: "culture", freq: "高频" },
+  // 商业类
+  { word: "entrepreneur", meaning: "企业家", meaning_en: "person who starts business", phrases: "successful entrepreneur", category: "business", freq: "高频" },
+  { word: "investment", meaning: "投资", meaning_en: "money put into business", phrases: "foreign investment", category: "business", freq: "高频" },
 ];
+const sampleIdioms = [
+  { phrase: "spill the tea", cn: "爆料/说八卦", en: "to gossip or share juicy info", examples: "Come on, spill the tea!" },
+  { phrase: "hit the books", cn: "刻苦学习", en: "to begin studying hard", examples: "I need to hit the books for IELTS." },
+];
+const notebook = [];
 
 function $(id) { return document.getElementById(id); }
 function setText(id, val) { const el = $(id); if (el) el.textContent = val; }
 
-/* ===== 页面切换 ===== */
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const page = document.getElementById(`page-${pageId}`);
-  if (page) page.classList.add('active');
-
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.page === pageId);
+// 导航滚动
+function bindNav() {
+  document.querySelectorAll("[data-scroll]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.scroll);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
 }
 
-function bindPageSwitch() {
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => showPage(btn.dataset.page));
-  });
-  document.querySelectorAll('[data-go]').forEach(btn => {
-    btn.addEventListener('click', () => showPage(btn.dataset.go));
-  });
-}
-
-/* ===== 考试倒计时 ===== */
+// 考试倒计时
 function updateCountdown(dateStr) {
   const target = dateStr ? new Date(dateStr) : null;
   const out1 = $("examCountdown");
+  const out2 = $("countValue");
   if (!target || isNaN(target.getTime())) {
     out1 && (out1.textContent = "未设置");
+    out2 && (out2.textContent = "未设置");
     return;
   }
   const diff = target - new Date();
   const days = Math.ceil(diff / 86400000);
   const text = diff <= 0 ? "考试日已到" : `${days} 天`;
   out1 && (out1.textContent = text);
+  out2 && (out2.textContent = text);
+}
+function setExamDate() {
+  const val = prompt("请输入考试日期（YYYY-MM-DD）：", localStorage.getItem("examDate") || "");
+  if (!val) return;
+  localStorage.setItem("examDate", val);
+  updateCountdown(val);
 }
 
-function bindDateInputs() {
-  const handler = e => {
-    const val = e.target.value;
-    if (!val) return;
-    localStorage.setItem("examDate", val);
-    updateCountdown(val);
-  };
-  $("examDateInput")?.addEventListener("change", handler);
-}
-
-/* ===== 柱状图（只听说读写） ===== */
-function getRangeData(range) {
-  // 顺序：听力 / 口语 / 阅读 / 写作
-  switch (range) {
-    case 'day':     return [20, 15, 25, 18];
-    case 'week':    return [120, 90, 150, 100];
-    case 'month':   return [480, 360, 520, 400];
-    case 'quarter': return [1200, 900, 1500, 1100];
-    case 'year':    return [4800, 3600, 5200, 4000];
-    case 'custom':  return [60, 45, 70, 50];
-    default:        return [20, 15, 25, 18];
-  }
-}
-
-function renderChart() {
-  const data = getRangeData(currentRange);
-  const ctx = $("timeChart").getContext("2d");
+// 时间柱状图（只显示L/S/R/W）
+function renderChart(data, range = "today") {
+  const canvas = $("timeChart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
   if (chartInstance) chartInstance.destroy();
+  
+  // 只显示听说读写4项
+  const labels = ["听力", "口语", "阅读", "写作"];
+  const colors = ["#60a5fa", "#a78bfa", "#34d399", "#f59e0b"];
+  const chartData = data.slice(0, 4); // 只取前4项
+  
   chartInstance = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: ["听力", "口语", "阅读", "写作"],
+      labels: labels,
       datasets: [{
-        data,
-        backgroundColor: ["#60a5fa", "#a78bfa", "#34d399", "#f59e0b"],
-      }],
+        data: chartData,
+        backgroundColor: colors,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } },
-    },
+      plugins: { 
+        legend: { display: false },
+      },
+      scales: { 
+        y: { 
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return value + '分钟';
+            }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 }
 
+// 获取时间范围数据
+function getRangeData(range) {
+  // 从localStorage获取学习时长数据
+  const studyData = JSON.parse(localStorage.getItem("studyData") || "{}");
+  const today = new Date().toISOString().split('T')[0];
+  
+  // 默认示例数据
+  let data = [20, 18, 25, 22]; // 听力、口语、阅读、写作（分钟）
+  
+  if (studyData[today]) {
+    data = [
+      studyData[today].listening || 0,
+      studyData[today].speaking || 0,
+      studyData[today].reading || 0,
+      studyData[today].writing || 0
+    ];
+  }
+  
+  // 根据不同范围聚合数据（简化版，实际应该按日期聚合）
+  if (range === "week") {
+    // 本周数据聚合
+    data = data.map(d => d * 7);
+  } else if (range === "month") {
+    data = data.map(d => d * 30);
+  } else if (range === "quarter") {
+    data = data.map(d => d * 90);
+  } else if (range === "year") {
+    data = data.map(d => d * 365);
+  }
+  
+  return data;
+}
+
+// 绑定时间范围切换
 function bindRangeTabs() {
-  document.querySelectorAll(".range-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".range-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      currentRange = tab.dataset.range;
-      renderChart();
+  document.querySelectorAll(".range-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".range-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const range = btn.dataset.range;
+      const data = getRangeData(range);
+      renderChart(data, range);
     });
   });
 }
 
-/* ===== 单词学习 & 生词本 ===== */
-function getNotebook() {
-  try {
-    return JSON.parse(localStorage.getItem("notebook") || "[]");
-  } catch { return []; }
+// 词汇学习数据管理
+function getVocabData() {
+  return JSON.parse(localStorage.getItem("vocabData") || "{}");
 }
-function saveNotebook(list) {
-  localStorage.setItem("notebook", JSON.stringify(list));
+function saveVocabData(data) {
+  localStorage.setItem("vocabData", JSON.stringify(data));
 }
 
+// 累积复习机制：每天复习之前所有天学习的新词
+// 第1天：学习新词（无复习）
+// 第2天：学习新词 + 复习第1天的新词
+// 第3天：学习新词 + 复习第2天和第1天的新词
+// 第4天：学习新词 + 复习第3、2、1天的新词
+// 以此类推，无上限
+
+// 检查单词是否需要复习（累积复习机制）
+function shouldReviewWord(word) {
+  if (!word.learnedDate) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const learnedDate = new Date(word.learnedDate);
+  learnedDate.setHours(0, 0, 0, 0);
+  
+  // 如果是今天刚学的，不需要复习
+  if (learnedDate.getTime() === today.getTime()) {
+    return false;
+  }
+  
+  // 获取上次复习日期
+  let lastReviewDate = word.lastReviewDate ? new Date(word.lastReviewDate) : learnedDate;
+  lastReviewDate.setHours(0, 0, 0, 0);
+  
+  // 如果今天已经复习过，不需要再复习
+  if (lastReviewDate.getTime() === today.getTime()) {
+    return false;
+  }
+  
+  // 累积复习：学习日期早于今天的所有单词都需要复习
+  return learnedDate < today;
+}
+
+// 计算需要复习的单词列表和数量
+function getReviewWords() {
+  const vocabData = getVocabData();
+  const allWords = vocabData.words || [];
+  
+  const reviewList = allWords.filter(word => shouldReviewWord(word));
+  return {
+    count: reviewList.length,
+    list: reviewList
+  };
+}
+
+// 获取新词/复习词比例设置
+function getVocabRatio() {
+  const ratio = localStorage.getItem("vocabRatio") || "1:2";
+  const [newRatio, reviewRatio] = ratio.split(":").map(Number);
+  return { newRatio, reviewRatio };
+}
+
+// 计算今日复习词目标数量（基于比例）
+function getReviewTarget() {
+  const target = parseInt(localStorage.getItem("wordTarget") || "30");
+  const { newRatio, reviewRatio } = getVocabRatio();
+  return Math.floor(target * reviewRatio / newRatio);
+}
+
+// 更新单词学习进度显示
+function updateVocabProgress() {
+  const vocabData = getVocabData();
+  const today = new Date().toISOString().split('T')[0];
+  const todayWords = vocabData.dailyWords?.[today] || [];
+  const target = parseInt(localStorage.getItem("wordTarget") || "30");
+  const reviewInfo = getReviewWords();
+  const reviewTarget = getReviewTarget();
+  
+  setText("wordToday", todayWords.length);
+  setText("wordTarget", target);
+  setText("wordReview", reviewInfo.count);
+  setText("wordReviewTarget", reviewTarget);
+  
+  // 更新比例显示
+  const { newRatio, reviewRatio } = getVocabRatio();
+  const ratioText = `${newRatio}:${reviewRatio}`;
+  const ratioEl = $("vocabRatioDisplay");
+  if (ratioEl) {
+    ratioEl.textContent = `新词:复习 = ${ratioText}`;
+  }
+}
+
+// 词汇
+function shuffle(arr) { return arr.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]); }
 function renderVocab() {
   const item = sampleVocab[vocabIndex % sampleVocab.length];
   setText("vocabWord", item.word);
   setText("vocabFreq", item.freq);
-
-  const options = shuffle([item.meaning, "无害的", "独特的", "鼓舞人心的"]);
+  const opts = shuffle([item.meaning, "无害的", "独特的", "鼓舞人心的"]);
   const box = $("vocabOptions");
   box.innerHTML = "";
-  options.forEach(opt => {
+  opts.forEach(opt => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.textContent = opt;
     btn.onclick = () => btn.classList.add(opt === item.meaning ? "correct" : "wrong");
     box.appendChild(btn);
   });
-
   $("vocabDetail").innerHTML = `
     <div>中文：${item.meaning}</div>
     <div>英文：${item.meaning_en}</div>
@@ -142,134 +285,319 @@ function renderVocab() {
     <div>词频：${item.freq}</div>
   `;
 }
-
-function shuffle(arr) {
-  return arr.map(x => [Math.random(), x])
-            .sort((a, b) => a[0] - b[0])
-            .map(x => x[1]);
-}
-
 function addToNotebook(item) {
-  const list = getNotebook();
+  const exist = notebook.find(x => x.word === item.word);
+  if (exist) exist.clicks = (exist.clicks || 1) + 1;
+  else notebook.push({ ...item, clicks: 1 });
+  
+  // 同时记录到词汇学习数据
+  const vocabData = getVocabData();
+  if (!vocabData.words) vocabData.words = [];
+  const wordExist = vocabData.words.find(w => w.word === item.word);
+  const today = new Date().toISOString().split('T')[0];
   const now = new Date().toISOString();
-  const exist = list.find(x => x.word === item.word);
-  if (exist) {
-    exist.clicks = (exist.clicks || 0) + 1;
-    exist.lastClickedAt = now;
-  } else {
-    list.unshift({
+  
+  if (!wordExist) {
+    vocabData.words.push({
       word: item.word,
       meaning: item.meaning,
+      meaning_en: item.meaning_en,
+      phrases: item.phrases,
+      root: item.root,
       freq: item.freq,
-      createdAt: now,
-      lastClickedAt: now,
-      clicks: 1,
+      learnedDate: now,  // 使用ISO格式存储完整时间
+      lastReviewDate: now,
+      reviewLevel: 0  // 从0开始，对应第一次复习（5分钟后）
     });
+    
+    // 更新今日学习单词
+    if (!vocabData.dailyWords) vocabData.dailyWords = {};
+    if (!vocabData.dailyWords[today]) vocabData.dailyWords[today] = [];
+    if (!vocabData.dailyWords[today].includes(item.word)) {
+      vocabData.dailyWords[today].push(item.word);
+    }
   }
-  saveNotebook(list);
-  renderNotebook(currentNotebookSort);
+  
+  saveVocabData(vocabData);
+  updateVocabProgress();
 }
 
-let currentNotebookSort = "recent"; // recent | count
-
-function renderNotebook(sortBy = "recent") {
-  currentNotebookSort = sortBy;
-  const list = getNotebook();
-  if (!list.length) {
-    $("notebookList").innerHTML = `<div class="hint">还没有任何生词，去各模块多多点击生词吧～</div>`;
-    return;
+// 标记单词已复习（累积复习机制）
+function markWordReviewed(word) {
+  const vocabData = getVocabData();
+  const wordData = vocabData.words.find(w => w.word === word.word || w.word === word);
+  if (wordData) {
+    // 累积复习：只需要更新最后复习日期，不需要记录复习级别
+    wordData.lastReviewDate = new Date().toISOString();
+    saveVocabData(vocabData);
+    updateVocabProgress();
   }
-  let data = [...list];
-  if (sortBy === "count") {
-    data.sort((a,b) => (b.clicks||0) - (a.clicks||0));
-  } else {
-    data.sort((a,b) => new Date(b.lastClickedAt) - new Date(a.lastClickedAt));
-  }
-
-  $("notebookList").innerHTML = data.map(item => `
-    <div class="list-item">
-      <div>
-        <div><strong>${item.word}</strong> <span class="hint">(${item.freq})</span></div>
-        <div class="hint">中文：${item.meaning}</div>
-        <div class="hint">收录日期：${item.createdAt.slice(0,10)} / 点击次数：${item.clicks || 0}</div>
-      </div>
-    </div>
-  `).join("");
 }
 
-function bindNotebookSort() {
-  document.querySelectorAll(".nb-tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".nb-tab").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderNotebook(btn.dataset.sort);
-    });
+// 设置新词/复习词比例
+function setVocabRatio() {
+  const current = localStorage.getItem("vocabRatio") || "1:2";
+  const options = ["1:1", "1:2", "1:3", "2:3"];
+  const currentIndex = options.indexOf(current);
+  
+  let message = "请选择新词:复习词的比例：\n";
+  options.forEach((opt, idx) => {
+    const [newR, reviewR] = opt.split(":").map(Number);
+    const target = parseInt(localStorage.getItem("wordTarget") || "30");
+    const reviewTarget = Math.floor(target * reviewR / newR);
+    message += `${idx + 1}. ${opt} (新词${target}个，复习${reviewTarget}个)${idx === currentIndex ? ' ← 当前' : ''}\n`;
   });
+  
+  const choice = prompt(message + "\n请输入选项编号（1-4）：", currentIndex + 1);
+  const selectedIndex = parseInt(choice) - 1;
+  
+  if (selectedIndex >= 0 && selectedIndex < options.length) {
+    localStorage.setItem("vocabRatio", options[selectedIndex]);
+    updateVocabProgress();
+    alert(`已设置学习比例为 ${options[selectedIndex]}`);
+  }
 }
 
-/* 单词本导出 */
-function exportNotebookExcel() {
-  const data = getNotebook();
-  if (!data.length) { alert("单词本为空"); return; }
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "notebook");
-  XLSX.writeFile(wb, "notebook.xlsx");
-}
-function exportNotebookPdf() {
-  const data = getNotebook();
-  if (!data.length) { alert("单词本为空"); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("IELTS 单词本", 10, 10);
-  let y = 20;
-  data.slice(0,40).forEach(item => {
-    doc.text(`${item.word}  (${item.freq})  ${item.meaning}  点击:${item.clicks||0}`, 10, y);
-    y += 6;
-  });
-  doc.save("notebook.pdf");
-}
-
-/* ===== 地道英语 ===== */
+// 地道英语
 function renderIdioms(list) {
   const box = $("idiomList");
   box.innerHTML = "";
-  if (!list.length) {
-    box.innerHTML = `<div class="hint">未找到结果</div>`;
-    return;
-  }
+  if (!list.length) { box.innerHTML = `<div class="hint">未找到结果</div>`; return; }
   list.forEach(it => {
     const row = document.createElement("div");
     row.className = "list-item";
-    row.innerHTML = `
-      <div>
-        <div><strong>${it.phrase}</strong></div>
-        <div class="hint">${it.cn}</div>
-        <div class="hint">${it.en}</div>
-        <div class="hint">示例：${it.examples || "N/A"}</div>
-      </div>
-    `;
+    row.innerHTML = `<div><div><strong>${it.phrase}</strong></div><div class="hint">${it.cn}</div><div class="hint">${it.en}</div><div class="hint">示例：${it.examples || "N/A"}</div></div>`;
     box.appendChild(row);
   });
 }
-
 function searchIdioms() {
   const q = $("idiomSearch").value.trim().toLowerCase();
   if (!q) return renderIdioms(sampleIdioms);
-  renderIdioms(sampleIdioms.filter(it =>
-    it.phrase.toLowerCase().includes(q) || (it.cn && it.cn.includes(q))
-  ));
+  renderIdioms(sampleIdioms.filter(it => it.phrase.toLowerCase().includes(q) || (it.cn && it.cn.includes(q))));
 }
 
-/* ===== 导出（生词本以外的全局导出占位） ===== */
+// 雅思单词书功能
+let wordbookCurrentPage = 1;
+const wordbookPageSize = 20;
+
+function renderWordBook(page = 1, category = "", search = "") {
+  wordbookCurrentPage = page;
+  const container = $("wordbookList");
+  if (!container) return;
+  
+  let filteredWords = [...ieltsWordBook];
+  
+  // 按分类筛选
+  if (category) {
+    filteredWords = filteredWords.filter(w => w.category === category);
+  }
+  
+  // 按搜索关键词筛选
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredWords = filteredWords.filter(w => 
+      w.word.toLowerCase().includes(searchLower) || 
+      w.meaning.includes(search) ||
+      (w.meaning_en && w.meaning_en.toLowerCase().includes(searchLower))
+    );
+  }
+  
+  // 分页
+  const totalPages = Math.ceil(filteredWords.length / wordbookPageSize);
+  const startIndex = (page - 1) * wordbookPageSize;
+  const pageWords = filteredWords.slice(startIndex, startIndex + wordbookPageSize);
+  
+  if (pageWords.length === 0) {
+    container.innerHTML = `<div class="hint">未找到匹配的单词</div>`;
+    $("wordbookPagination").innerHTML = "";
+    return;
+  }
+  
+  container.innerHTML = pageWords.map(word => `
+    <div class="wordbook-item">
+      <div class="wordbook-word">
+        <strong>${word.word}</strong>
+        <span class="pill ${word.category}">${getCategoryName(word.category)}</span>
+        <span class="pill ghost">${word.freq}</span>
+      </div>
+      <div class="wordbook-meaning">
+        <div>中文：${word.meaning}</div>
+        <div>英文：${word.meaning_en || ""}</div>
+        ${word.phrases ? `<div>短语：${word.phrases}</div>` : ""}
+      </div>
+      <button class="btn-link" onclick="addWordToLearning('${word.word}')">加入学习</button>
+    </div>
+  `).join("");
+  
+  // 渲染分页
+  renderWordBookPagination(totalPages, page);
+}
+
+function renderWordBookPagination(totalPages, currentPage) {
+  const container = $("wordbookPagination");
+  if (!container || totalPages <= 1) {
+    container.innerHTML = "";
+    return;
+  }
+  
+  const category = $("wordbookCategory")?.value || "";
+  const search = $("wordbookSearch")?.value || "";
+  
+  let html = "";
+  if (currentPage > 1) {
+    html += `<button class="page-btn" onclick="renderWordBookWithParams(${currentPage - 1}, '${category}', '${search}')">上一页</button>`;
+  }
+  html += `<span class="page-info">第 ${currentPage} / ${totalPages} 页</span>`;
+  if (currentPage < totalPages) {
+    html += `<button class="page-btn" onclick="renderWordBookWithParams(${currentPage + 1}, '${category}', '${search}')">下一页</button>`;
+  }
+  container.innerHTML = html;
+}
+
+// 全局函数，用于分页按钮调用
+window.renderWordBookWithParams = function(page, category, search) {
+  renderWordBook(page, category, search);
+};
+
+function bindWordBook() {
+  const searchInput = $("wordbookSearch");
+  const categorySelect = $("wordbookCategory");
+  
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const category = categorySelect ? categorySelect.value : "";
+        renderWordBook(1, category, e.target.value);
+      }, 300);
+    });
+  }
+  
+  if (categorySelect) {
+    categorySelect.addEventListener("change", (e) => {
+      const search = searchInput ? searchInput.value : "";
+      renderWordBook(1, e.target.value, search);
+    });
+  }
+}
+
+// 全局函数，用于分页
+window.renderWordBook = function(page) {
+  const category = $("wordbookCategory")?.value || "";
+  const search = $("wordbookSearch")?.value || "";
+  renderWordBook(page, category, search);
+};
+
+function getCategoryName(category) {
+  const names = {
+    geography: "地理",
+    nature: "自然",
+    education: "教育",
+    technology: "科技",
+    culture: "文化",
+    business: "商业"
+  };
+  return names[category] || category;
+}
+
+// 将单词加入学习
+window.addWordToLearning = function(word) {
+  const wordData = ieltsWordBook.find(w => w.word === word);
+  if (wordData) {
+    addToNotebook(wordData);
+    alert(`已将 "${word}" 加入学习列表！`);
+  }
+};
+
+// 单词查询功能（调用有道翻译API）
+async function searchWord(word) {
+  const resultContainer = $("wordSearchResult");
+  if (!resultContainer) return;
+  
+  if (!word || !word.trim()) {
+    resultContainer.innerHTML = `<div class="hint">请输入要查询的单词</div>`;
+    return;
+  }
+  
+  resultContainer.innerHTML = `<div class="loading">查询中...</div>`;
+  
+  try {
+    // 注意：有道翻译API需要API Key，这里使用公开的API示例
+    // 实际使用时需要替换为你的API Key或使用其他翻译服务
+    const query = encodeURIComponent(word.trim());
+    
+    // 使用免费的翻译API（示例：使用MyMemory翻译API作为备选）
+    // 实际项目中应该使用有道翻译API，需要配置API Key
+    const response = await fetch(`https://api.mymemory.translated.net/get?q=${query}&langpair=en|zh`);
+    const data = await response.json();
+    
+    if (data.responseData && data.responseData.translatedText) {
+      resultContainer.innerHTML = `
+        <div class="word-result-card">
+          <div class="word-result-header">
+            <h3>${word}</h3>
+            <button class="btn-link" onclick="addWordToLearning('${word}')">加入学习</button>
+          </div>
+          <div class="word-result-content">
+            <div class="result-item">
+              <strong>翻译：</strong>${data.responseData.translatedText}
+            </div>
+            ${data.responseData.match ? `<div class="result-item"><strong>匹配度：</strong>${data.responseData.match}%</div>` : ""}
+          </div>
+        </div>
+      `;
+    } else {
+      // 如果API失败，使用本地数据
+      const localWord = ieltsWordBook.find(w => 
+        w.word.toLowerCase() === word.toLowerCase() || 
+        w.meaning === word
+      );
+      
+      if (localWord) {
+        resultContainer.innerHTML = `
+          <div class="word-result-card">
+            <div class="word-result-header">
+              <h3>${localWord.word}</h3>
+              <button class="btn-link" onclick="addWordToLearning('${localWord.word}')">加入学习</button>
+            </div>
+            <div class="word-result-content">
+              <div class="result-item"><strong>中文：</strong>${localWord.meaning}</div>
+              <div class="result-item"><strong>英文释义：</strong>${localWord.meaning_en || ""}</div>
+              ${localWord.phrases ? `<div class="result-item"><strong>短语：</strong>${localWord.phrases}</div>` : ""}
+              <div class="result-item"><strong>分类：</strong>${getCategoryName(localWord.category)}</div>
+              <div class="result-item"><strong>词频：</strong>${localWord.freq}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        resultContainer.innerHTML = `<div class="hint">未找到该单词，请检查拼写或尝试其他单词</div>`;
+      }
+    }
+  } catch (error) {
+    console.error("查询失败:", error);
+    resultContainer.innerHTML = `<div class="hint">查询失败，请稍后重试。提示：可以尝试使用雅思单词书功能查找单词。</div>`;
+  }
+}
+
+// 导出
 function exportExcel() {
-  alert("导出占位：可扩展为导出全部学习记录。");
+  const data = notebook.length ? notebook : [{ word: "demo", meaning: "示例", freq: "中频", clicks: 1 }];
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Notebook");
+  XLSX.writeFile(wb, "notebook.xlsx");
 }
 function exportPdf() {
-  alert("导出占位：可扩展为导出综合学习报告。");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("雅思学习报告", 10, 10);
+  doc.text("目标平均分: " + (localStorage.getItem("targetAvg") || "7.0"), 10, 20);
+  doc.text("考试倒计时: " + ($("examCountdown").textContent || "-"), 10, 30);
+  doc.save("report.pdf");
 }
 
-/* ===== 计时器（四科） & 真题计时 ===== */
+// 计时器
 const timers = {};
 function startTimer(module) {
   if (timers[module]) clearInterval(timers[module]);
@@ -283,121 +611,88 @@ function startTimer(module) {
   }, 1000);
 }
 
-function startMockTimer() {
-  if (mockTimerId) clearInterval(mockTimerId);
-  let sec = 0;
-  const el = document.querySelector("#page-mock .timer");
-  mockTimerId = setInterval(() => {
-    sec += 1;
-    const m = String(Math.floor(sec / 60)).padStart(2, "0");
-    const s = String(sec % 60).padStart(2, "0");
-    el.textContent = `${m}:${s}`;
-  }, 1000);
-}
+function bootstrap() {
+  bindNav();
+  $("ctaEnter").onclick = () => document.getElementById("targets").scrollIntoView({ behavior: "smooth" });
+  $("ctaVocab").onclick = () => document.getElementById("vocab").scrollIntoView({ behavior: "smooth" });
+  $("ctaExamDate").onclick = setExamDate;
+  $("btnSetExam").onclick = setExamDate;
+  $("startMock").onclick = () => alert("真题演练功能占位，后续接入完整评分");
+  $("searchIdiom").onclick = searchIdioms;
+  $("exportExcel").onclick = exportExcel;
+  $("exportPdf").onclick = exportPdf;
+  document.querySelectorAll(".start-btn").forEach(btn => btn.onclick = () => startTimer(btn.dataset.module));
+  $("knowBtn").onclick = () => { 
+    vocabIndex++; 
+    renderVocab();
+    // 记录学习进度
+    const item = sampleVocab[(vocabIndex - 1) % sampleVocab.length];
+    addToNotebook(item);
+  };
+  $("dontKnowBtn").onclick = () => { vocabIndex++; renderVocab(); };
+  $("addNotebookBtn").onclick = () => addToNotebook(sampleVocab[vocabIndex % sampleVocab.length]);
+  // 设置比例按钮
+  if ($("btnSetVocabRatio")) {
+    $("btnSetVocabRatio").onclick = setVocabRatio;
+  }
+  if ($("btnSetRatio")) {
+    $("btnSetRatio").onclick = setVocabRatio;
+  }
+  
+  // 复习功能
+  $("btnReview").onclick = () => {
+    const reviewInfo = getReviewWords();
+    if (reviewInfo.count === 0) {
+      alert("太棒了！目前没有需要复习的单词～ 🎉");
+      return;
+    }
+    
+    // 显示复习单词列表（简化版，后续可以扩展为完整复习界面）
+    const reviewList = reviewInfo.list.slice(0, 10).map(w => w.word).join("、");
+    const more = reviewInfo.count > 10 ? `等${reviewInfo.count}个` : "";
+    const confirmMsg = `今日需要复习 ${reviewInfo.count} 个单词\n\n${reviewList}${more}\n\n开始复习吗？`;
+    
+    if (confirm(confirmMsg)) {
+      // 这里可以跳转到复习页面或开始复习流程
+      alert("复习功能开发中，将支持听写/释义/选择等多种复习模式～");
+    }
+  };
 
-/* ===== 登录 / 水平测试浮层 ===== */
-function showOverlay() { $("authOverlay").classList.add("show"); }
-function hideOverlay() { $("authOverlay").classList.remove("show"); }
-
-function bindTestSliders() {
-  ["testListening","testSpeaking","testReading","testWriting"].forEach(id => {
-    const input = $(id);
-    input.addEventListener("input", () => {
-      setText("valListening", $("testListening").value);
-      setText("valSpeaking", $("testSpeaking").value);
-      setText("valReading", $("testReading").value);
-      setText("valWriting", $("testWriting").value);
-    });
-  });
-}
-
-function saveProfile() {
-  const ls = parseFloat($("testListening").value)||0;
-  const sp = parseFloat($("testSpeaking").value)||0;
-  const rd = parseFloat($("testReading").value)||0;
-  const wr = parseFloat($("testWriting").value)||0;
-  const avg = ((ls+sp+rd+wr)/4).toFixed(1);
-  localStorage.setItem("targetAvg", avg);
-  setText("targetAverage", avg);
-  setText("avgDisplay", avg);
-  hideOverlay();
-}
-
-/* ===== 初始化数据 ===== */
-function initData() {
+  // 分数/目标值示例
   const avg = localStorage.getItem("targetAvg") || "7.0";
   setText("targetAverage", avg);
-  setText("avgDisplay", avg);
+  setText("coinCount", localStorage.getItem("coins") || "0");
 
-  const exam = localStorage.getItem("examDate");
-  updateCountdown(exam);
+  // 倒计时
+  updateCountdown(localStorage.getItem("examDate"));
 
-  const tgt = localStorage.getItem("wordTarget") || "30";
-  $("wordTarget").value = tgt;
-  $("wordTarget").addEventListener("input", () => {
-    const v = Math.max(1, Math.min(200, parseInt($("wordTarget").value || "30", 10)));
-    $("wordTarget").value = v;
-    localStorage.setItem("wordTarget", v);
-  });
-
-  renderNotebook(currentNotebookSort);
-}
-
-/* ===== 绑定首页按钮 & 登录演示 ===== */
-let currentNotebookSort = "recent";
-
-function bindHomeActions() {
-  $("btnAuth").onclick = showOverlay;
-  $("sendOtp").onclick = () => alert("演示模式：不发送真实短信。");
-  $("verifyOtp").onclick = () => alert("演示登录成功～");
-
-  $("searchIdiom")?.addEventListener("click", searchIdioms);
-  $("exportExcel")?.addEventListener("click", exportExcel);
-  $("exportPdf")?.addEventListener("click", exportPdf);
-  $("startMock")?.addEventListener("click", () => {
-    startMockTimer();
-    alert("真题演练计时已开始（不计入上方学习时长）");
-  });
-
-  document.querySelectorAll(".start-btn").forEach(btn => {
-    btn.addEventListener("click", () => startTimer(btn.dataset.module));
-  });
-
-  $("knowBtn")?.addEventListener("click", () => { vocabIndex++; renderVocab(); });
-  $("dontKnowBtn")?.addEventListener("click", () => { vocabIndex++; renderVocab(); });
-  $("addNotebookBtn")?.addEventListener("click", () => {
-    const item = sampleVocab[vocabIndex % sampleVocab.length];
-    addToNotebook(item);
-    alert("已加入单词本");
-  });
-
-  $("exportNotebookExcel")?.addEventListener("click", exportNotebookExcel);
-  $("exportNotebookPdf")?.addEventListener("click", exportNotebookPdf);
-
-  document.querySelectorAll(".nb-tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".nb-tab").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderNotebook(btn.dataset.sort);
-    });
-  });
-}
-
-/* ===== 入口 ===== */
-function bootstrap() {
-  bindPageSwitch();
-  bindDateInputs();
-  bindRangeTabs();
-  bindTestSliders();
-  bindHomeActions();
-  initData();
-
+  // 单词查询功能
+  if ($("btnWordSearch")) {
+    $("btnWordSearch").onclick = () => {
+      const word = $("wordSearchInput")?.value.trim();
+      searchWord(word);
+    };
+    // 支持回车查询
+    if ($("wordSearchInput")) {
+      $("wordSearchInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          searchWord(e.target.value.trim());
+        }
+      });
+    }
+  }
+  
+  // 单词书功能
+  bindWordBook();
+  renderWordBook(1);
+  
+  // 渲染
   renderVocab();
   renderIdioms(sampleIdioms);
-  renderChart();
-
-  if (!localStorage.getItem("targetAvg")) showOverlay();
-  $("saveProfile").onclick = saveProfile;
+  updateVocabProgress();
+  bindRangeTabs();
+  const initialData = getRangeData("today");
+  renderChart(initialData, "today");
 }
 
 document.addEventListener("DOMContentLoaded", bootstrap);
