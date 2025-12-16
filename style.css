@@ -1,261 +1,471 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IELTS Learning Hub</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="logo">IELTS 7+ 🎓</div>
-      <nav class="nav">
-        <div class="nav-title">知识庄园</div>
-        <button class="nav-item active" data-scroll="hero">首页</button>
-        <button class="nav-item" data-scroll="vocab">单词学习</button>
-        <div class="nav-title mt">Training Modules</div>
-        <button class="nav-item" data-scroll="listening">听力训练</button>
-        <button class="nav-item" data-scroll="speaking">口语训练</button>
-        <button class="nav-item" data-scroll="reading">阅读训练</button>
-        <button class="nav-item" data-scroll="writing">写作训练</button>
-        <div class="nav-title mt">Explore</div>
-        <button class="nav-item" data-scroll="mock">真题演练</button>
-        <button class="nav-item" data-scroll="idiom">地道英语</button>
-        <button class="nav-item" data-scroll="wordbook">雅思单词书</button>
-        <button class="nav-item" data-scroll="wordsearch">单词查询</button>
-      </nav>
-    </aside>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f7f9fc;
+  color: #0f172a;
+}
+a { color: inherit; text-decoration: none; }
+.layout { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  padding: 20px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.logo { font-weight: 700; font-size: 18px; margin-bottom: 18px; }
+.nav { display: flex; flex-direction: column; gap: 6px; }
+.nav-title { font-weight: 700; color: #475569; margin: 12px 0 4px; }
+.nav-item {
+  border: none;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f172a;
+}
+.nav-item.active, .nav-item:hover { background: #eef2ff; color: #4f46e5; }
+.nav .mt { margin-top: 12px; }
 
-    <main class="main">
-      <header class="header">
-        <div class="tagline">
-          <div class="quote-en">"The journey of a thousand miles begins with a single step."</div>
-          <div class="quote-cn">千里之行，始于足下</div>
-        </div>
-        <div class="top-right">
-          <div class="chip gold">💰 <span id="coinCount">0</span>G</div>
-          <div class="chip">TARGET AVG <span id="targetAverage">7.0</span></div>
-          <div class="chip ghost">距离考试 <span id="examCountdown">未设置</span></div>
-          <div class="avatar">U</div>
-        </div>
-      </header>
+.main { padding: 20px 26px 40px; }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.tagline { 
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.quote-en {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 18px;
+  color: #4f46e5;
+  line-height: 1.4;
+}
+.quote-cn {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+}
+.chip.gold { background: #fff7ed; color: #fb923c; }
+.chip.ghost { background: #f8fafc; color: #475569; }
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.avatar:hover {
+  transform: scale(1.05);
+}
+.date-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+.detail-page {
+  display: none !important;
+}
+.detail-page.active {
+  display: block !important;
+}
 
-      <section class="hero" id="hero">
-        <div class="hero-left">
-          <p class="hello">早安，准7分选手！👋</p>
-          <p class="status">今日庄园状态：<span class="status-label">需除草</span></p>
-          <div class="hero-actions">
-            <button class="btn primary" id="ctaEnter">进入我的庄园</button>
-            <button class="btn ghost" id="ctaExamDate">设置考试日期</button>
-          </div>
-          <div class="hero-icons">🏡 🌽 🌲</div>
-        </div>
-        <div class="word-card">
-          <div class="word-title">单词学习</div>
-          <div class="word-progress">
-            <div class="word-row">
-              <span class="word-label">今日新词：</span>
-              <span class="word-num"><span id="wordToday">0</span>/<span id="wordTarget">30</span></span>
-            </div>
-            <div class="word-row">
-              <span class="word-label">待复习：</span>
-              <span class="word-num review"><span id="wordReview">0</span>/<span id="wordReviewTarget">60</span></span>
-            </div>
-            <div class="word-row ratio-row">
-              <span class="word-label" id="vocabRatioDisplay">新词:复习 = 1:2</span>
-              <button class="btn-link" id="btnSetRatio">设置比例</button>
-            </div>
-          </div>
-          <button class="btn secondary" id="ctaVocab">开始背诵</button>
-        </div>
-      </section>
+.hero {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 14px;
+  background: linear-gradient(135deg, #e0f2fe, #eef2ff);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #e0e7ff;
+}
+.hero-left .hello { font-weight: 700; font-size: 20px; margin: 0 0 6px; }
+.hero-left .status { color: #4b5563; margin: 0 0 10px; }
+.status-label { color: #10b981; font-weight: 700; }
+.hero-actions { display: flex; gap: 10px; margin-bottom: 10px; }
+.hero-icons { font-size: 28px; }
+.word-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.word-title { font-weight: 700; margin-bottom: 8px; }
+.word-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.word-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.word-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+.word-num { 
+  font-size: 20px; 
+  font-weight: 800; 
+  color: #0f172a;
+}
+.word-num.review {
+  color: #f59e0b;
+}
+.ratio-row {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+.btn-link {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+.btn-link:hover {
+  color: #4f46e5;
+}
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-      <section class="targets" id="targets">
-        <h3>专项突破 (Target Gaps)</h3>
-        <div class="target-grid">
-          <div class="target-card">
-            <div class="target-top">
-              <span class="pill blue">READING</span>
-              <span class="icon">📘</span>
-            </div>
-            <div class="score-row"><span id="readingScore">7.5</span> <span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：学术类长难句分析</div>
-          </div>
-          <div class="target-card">
-            <div class="target-top">
-              <span class="pill purple">LISTENING</span>
-              <span class="icon">🎧</span>
-            </div>
-            <div class="score-row"><span id="listeningScore">7</span> <span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：1.2x 倍速听写</div>
-          </div>
-          <div class="target-card">
-            <div class="target-top">
-              <span class="pill red">SPEAKING</span>
-              <span class="icon">🎤</span>
-            </div>
-            <div class="score-row"><span id="speakingScore">6.5</span> <span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：Part 2 流利度跟读</div>
-          </div>
-          <div class="target-card">
-            <div class="target-top">
-              <span class="pill orange">WRITING</span>
-              <span class="icon">✏️</span>
-            </div>
-            <div class="score-row"><span id="writingScore">6.5</span> <span class="label">Target Score</span></div>
-            <div class="hint">i+1 推荐：复杂句式汉译英</div>
-          </div>
-        </div>
-      </section>
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,0.08); }
+.btn.primary { background: linear-gradient(135deg, #22d3ee, #6366f1); color: #fff; border: none; }
+.btn.secondary { background: #4ade80; color: #0f172a; border: none; }
+.btn.ghost { background: #f1f5f9; }
 
-      <section class="grid-two" id="stats">
-        <div class="card-panel">
-          <div class="card-header">
-            <div class="card-title">听说读写学习时长</div>
-            <div class="range-tabs">
-              <button class="range-tab active" data-range="today">今日</button>
-              <button class="range-tab" data-range="week">本周</button>
-              <button class="range-tab" data-range="month">本月</button>
-              <button class="range-tab" data-range="quarter">本季度</button>
-              <button class="range-tab" data-range="year">本年</button>
-              <button class="range-tab" data-range="custom">自定义</button>
-            </div>
-          </div>
-          <canvas id="timeChart" height="220"></canvas>
-          <div class="chart-hint">每天坚持30分钟听力+30分钟阅读，配合适量口语和写作练习，分数会慢慢涨起来~</div>
-        </div>
-        <div class="card-panel countdown">
-          <div class="card-title">考试倒计时</div>
-          <div class="count-value" id="countValue">未设置</div>
-          <input type="date" id="examDateInput" class="date-input" style="display: none;" />
-          <button class="btn ghost" id="btnSetExam">设置考试日期</button>
-        </div>
-      </section>
+.targets { margin-bottom: 16px; }
+.targets h3 { margin: 0 0 10px; }
+.target-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.target-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 25px rgba(79,70,229,0.05);
+}
+.target-top { display: flex; justify-content: space-between; align-items: center; }
+.pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+}
+.pill.blue { background: #eef2ff; color: #4338ca; }
+.pill.purple { background: #f3e8ff; color: #7c3aed; }
+.pill.red { background: #ffe4e6; color: #dc2626; }
+.pill.orange { background: #fff7ed; color: #ea580c; }
+.score-row { display: flex; align-items: baseline; gap: 6px; margin: 6px 0; }
+.score-row span:first-child { font-size: 28px; font-weight: 800; }
+.score-row .label { color: #6b7280; font-size: 12px; }
+.hint { color: #6b7280; font-size: 13px; }
+.icon { font-size: 18px; }
 
-      <section class="card-panel large detail-page" id="vocab">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">词汇背诵 🪴</div>
-            <div class="hint">点击释义，高亮加入生词本；完成后可听写/释义复习。基于艾宾浩斯记忆曲线自动安排复习。</div>
-          </div>
-          <div class="panel-actions">
-            <button class="btn secondary" id="btnReview">快速复习</button>
-            <button class="btn ghost" id="btnSetVocabRatio">设置学习比例</button>
-          </div>
-        </div>
-        <div class="vocab-flex">
-          <div class="vocab-main">
-            <div class="vocab-word" id="vocabWord">earthquake</div>
-            <div class="pill ghost" id="vocabFreq">高频</div>
-            <div class="vocab-options" id="vocabOptions"></div>
-            <div class="vocab-btns">
-              <button class="btn primary" id="knowBtn">认识 ✅</button>
-              <button class="btn ghost" id="dontKnowBtn">不认识 ❌</button>
-              <button class="btn ghost" id="addNotebookBtn">加入生词本</button>
-            </div>
-          </div>
-          <div class="vocab-detail" id="vocabDetail"></div>
-        </div>
-      </section>
+.grid-two { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 14px; margin-bottom: 16px; }
+.card-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 25px rgba(15,23,42,0.05);
+}
+.card-panel.large { margin-bottom: 16px; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.card-title { font-weight: 800; }
+.range-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.range-tab {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.range-tab:hover {
+  background: #f1f5f9;
+}
+.range-tab.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+}
+.chart-hint {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+.countdown { display: grid; gap: 10px; align-content: start; }
+.count-value { font-size: 26px; font-weight: 800; color: #4f46e5; }
 
-      <section class="card-panel detail-page" id="listening">
-        <div class="card-title">听力训练 🎧</div>
-        <div class="hint">i+1 难度，计时记录</div>
-        <div class="timer-row"><span class="timer" data-module="listening">00:00</span><button class="btn ghost start-btn" data-module="listening">开始</button></div>
-      </section>
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.vocab-flex { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 12px; }
+.vocab-main {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+}
+.vocab-word { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+.vocab-options { display: grid; gap: 8px; margin: 10px 0; }
+.option-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.option-btn.correct { border-color: #22c55e; background: #ecfdf3; }
+.option-btn.wrong { border-color: #ef4444; background: #fef2f2; }
+.vocab-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.vocab-detail {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  color: #475569;
+}
 
-      <section class="card-panel detail-page" id="speaking">
-        <div class="card-title">口语训练 🎙️</div>
-        <div class="hint">i+1 难度，计时记录</div>
-        <div class="timer-row"><span class="timer" data-module="speaking">00:00</span><button class="btn ghost start-btn" data-module="speaking">开始</button></div>
-      </section>
+.timer-row { display: flex; gap: 10px; align-items: center; }
+.timer { font-family: 'JetBrains Mono', 'SFMono-Regular', monospace; font-weight: 700; }
+.report { margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; min-height: 40px; }
 
-      <section class="card-panel detail-page" id="reading">
-        <div class="card-title">阅读训练 📖</div>
-        <div class="hint">i+1 难度，计时记录</div>
-        <div class="timer-row"><span class="timer" data-module="reading">00:00</span><button class="btn ghost start-btn" data-module="reading">开始</button></div>
-      </section>
+.search-row { display: flex; gap: 8px; }
+input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+}
 
-      <section class="card-panel detail-page" id="writing">
-        <div class="card-title">写作训练 ✏️</div>
-        <div class="hint">i+1 难度，计时记录</div>
-        <div class="timer-row"><span class="timer" data-module="writing">00:00</span><button class="btn ghost start-btn" data-module="writing">开始</button></div>
-      </section>
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.list-item {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-      <section class="card-panel detail-page" id="mock">
-        <div class="card-title">真题演练 🎯（锁定考试参数）</div>
-        <div class="hint">全真计时，倍速/音色/口音/主题已锁定。</div>
-        <button class="btn primary" id="startMock">开始模拟</button>
-        <div id="mockReport" class="report"></div>
-      </section>
+/* 单词书样式 */
+.wordbook-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.wordbook-item {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.wordbook-word {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.wordbook-word strong {
+  font-size: 18px;
+  color: #0f172a;
+}
+.wordbook-meaning {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.wordbook-meaning div {
+  margin: 4px 0;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.page-btn {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.page-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.page-info {
+  color: #6b7280;
+  font-size: 14px;
+}
+.search-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+  min-width: 200px;
+}
+.select-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-      <section class="card-panel detail-page" id="wordbook">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">雅思单词书 📚</div>
-            <div class="hint">查看所有雅思单词，按主题分类浏览</div>
-          </div>
-          <div class="panel-actions">
-            <input type="text" id="wordbookSearch" placeholder="搜索单词..." class="search-input" />
-            <select id="wordbookCategory" class="select-input">
-              <option value="">全部主题</option>
-              <option value="geography">地理</option>
-              <option value="nature">自然</option>
-              <option value="education">教育</option>
-              <option value="technology">科技</option>
-              <option value="culture">文化</option>
-              <option value="business">商业</option>
-            </select>
-          </div>
-        </div>
-        <div id="wordbookList" class="wordbook-list"></div>
-        <div class="pagination" id="wordbookPagination"></div>
-      </section>
+/* 单词查询样式 */
+.search-section {
+  margin-top: 12px;
+}
+.search-row-large {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.search-input-large {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 16px;
+}
+.word-search-result {
+  min-height: 100px;
+}
+.word-result-card {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.word-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.word-result-header h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #0f172a;
+}
+.word-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.result-item {
+  padding: 8px 0;
+  color: #475569;
+  line-height: 1.6;
+}
+.result-item strong {
+  color: #0f172a;
+  margin-right: 8px;
+}
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+}
 
-      <section class="card-panel detail-page" id="wordsearch">
-        <div class="panel-head">
-          <div>
-            <div class="card-title">单词查询 🔍</div>
-            <div class="hint">输入单词，调用有道翻译查询详细释义</div>
-          </div>
-        </div>
-        <div class="search-section">
-          <div class="search-row-large">
-            <input type="text" id="wordSearchInput" placeholder="输入英文单词或中文..." class="search-input-large" />
-            <button id="btnWordSearch" class="btn primary">查询</button>
-          </div>
-          <div id="wordSearchResult" class="word-search-result"></div>
-        </div>
-      </section>
-
-      <section class="card-panel detail-page" id="idiom">
-        <div class="card-title">地道英语 / 俚语 / 热梗 🎬</div>
-        <div class="search-row">
-          <input id="idiomSearch" placeholder="输入英文或中文关键词" />
-          <button id="searchIdiom" class="btn">查询</button>
-        </div>
-        <div id="idiomList" class="list"></div>
-      </section>
-
-      <section class="card-panel detail-page" id="export">
-        <div class="card-title">导出学习内容</div>
-        <div class="actions">
-          <button id="exportExcel" class="btn">导出 Excel</button>
-          <button id="exportPdf" class="btn ghost">导出 PDF</button>
-        </div>
-        <div class="hint">导出生词本 / 错题本 / 真题报告 / 句式库。</div>
-      </section>
-    </main>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid #e5e7eb; }
+  .main { padding: 16px; }
+  .grid-two, .hero, .vocab-flex { grid-template-columns: 1fr; }
+  .search-row-large {
+    flex-direction: column;
+  }
+  .panel-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .search-input, .select-input {
+    width: 100%;
+  }
+}
